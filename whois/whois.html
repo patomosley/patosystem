@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>PATO SO - WHOIS verificador de dominios</title>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg-primary);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      padding: 30px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: var(--bg-secondary);
+      transform: translateY(-2px);
+    }
+
+    .back-button svg {
+      margin-right: 6px;
+      width: 16px;
+      height: 16px;
+      fill: var(--text-primary);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* Resultado */
+    .result-container {
+      margin-top: 30px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      display: none;
+      border: 1px solid var(--border-color);
+    }
+
+    .result-container.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-secondary);
+    }
+
+    .result-item {
+      margin-bottom: 15px;
+    }
+
+    .result-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .result-value {
+      font-size: 15px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      word-break: break-all;
+    }
+
+    .result-section {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .result-section:last-child {
+      border-bottom: none;
+    }
+
+    .result-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--text-primary);
+    }
+
+    .notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      animation: fadeNotificationInOut 3s forwards;
+      font-size: 14px;
+    }
+    
+    @keyframes fadeNotificationInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <a href="javascript:history.back()" class="back-button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Voltar
+    </a>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+  </div>
+  
+  <h1>WHOIS - Verificação de Domínios</h1>
+
+  <div class="form-group">
+    <label for="domainName">Nome do Domínio:</label>
+    <input type="text" id="domainName" placeholder="Ex: exemplo.com.br">
+  </div>
+
+  <div class="buttons-container">
+    <button id="checkButton" onclick="verificarDominio()">Verificar Domínio</button>
+    <button class="secondary" onclick="limparFormulario()">Limpar</button>
+  </div>
+
+  <div class="result-container" id="resultContainer">
+    <div class="result-header">
+      <h3 class="result-title">Resultado da Consulta</h3>
+      <button class="copy-button" onclick="copiarResultado()" title="Copiar Resultado">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-section-title">Informações do Domínio</div>
+      
+      <div class="result-item">
+        <div class="result-label">Nome do Domínio</div>
+        <div class="result-value" id="resultDomain"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Status</div>
+        <div class="result-value" id="resultStatus"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Data de Criação</div>
+        <div class="result-value" id="resultCreated"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Data de Expiração</div>
+        <div class="result-value" id="resultExpires"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Última Atualização</div>
+        <div class="result-value" id="resultChanged"></div>
+      </div>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-section-title">Servidores DNS</div>
+      <div id="resultDNS"></div>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-section-title">Titular</div>
+      
+      <div class="result-item">
+        <div class="result-label">Nome</div>
+        <div class="result-value" id="resultOwnerName"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">País</div>
+        <div class="result-value" id="resultOwnerCountry"></div>
+      </div>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-section-title">Contato Técnico</div>
+      
+      <div class="result-item">
+        <div class="result-label">Nome</div>
+        <div class="result-value" id="resultTechName"></div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">País</div>
+        <div class="result-value" id="resultTechCountry"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+  // Alternar tema claro/escuro
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    this.textContent = newTheme === 'light' ? '🌙' : '☀️';
+  });
+
+  // Verificar domínio
+  async function verificarDominio() {
+    const domainInput = document.getElementById('domainName').value.trim();
+    const checkButton = document.getElementById('checkButton');
+    
+    if (!domainInput) {
+      mostrarNotificacao('Por favor, insira um nome de domínio.');
+      return;
+    }
+    
+    // Validar formato do domínio
+    if (!validarDominio(domainInput)) {
+      mostrarNotificacao('Nome de domínio inválido. Verifique e tente novamente.');
+      return;
+    }
+    
+    try {
+      // Desabilitar o botão e mostrar spinner durante a consulta
+      const originalButtonText = checkButton.innerHTML;
+      checkButton.disabled = true;
+      checkButton.innerHTML = '<span class="spinner"></span>Consultando...';
+      
+      // Mostrar o container de resultados com indicador de carregamento
+      document.getElementById('resultDomain').textContent = domainInput;
+      document.getElementById('resultStatus').textContent = 'Consultando...';
+      document.getElementById('resultCreated').textContent = 'Consultando...';
+      document.getElementById('resultExpires').textContent = 'Consultando...';
+      document.getElementById('resultChanged').textContent = 'Consultando...';
+      document.getElementById('resultDNS').innerHTML = '<div class="result-item"><div class="result-value">Consultando...</div></div>';
+      document.getElementById('resultOwnerName').textContent = 'Consultando...';
+      document.getElementById('resultOwnerCountry').textContent = 'Consultando...';
+      document.getElementById('resultTechName').textContent = 'Consultando...';
+      document.getElementById('resultTechCountry').textContent = 'Consultando...';
+      document.getElementById('resultContainer').classList.add('active');
+      
+      // Fazer a consulta WHOIS
+      const whoisData = await consultarWhois(domainInput);
+      
+      // Preencher os resultados
+      preencherResultados(whoisData);
+      
+      // Restaurar o botão
+      checkButton.disabled = false;
+      checkButton.innerHTML = originalButtonText;
+    } catch (error) {
+      document.getElementById('resultStatus').textContent = `Erro: ${error.message}`;
+      document.getElementById('resultCreated').textContent = 'N/A';
+      document.getElementById('resultExpires').textContent = 'N/A';
+      document.getElementById('resultChanged').textContent = 'N/A';
+      document.getElementById('resultDNS').innerHTML = '<div class="result-item"><div class="result-value">N/A</div></div>';
+      document.getElementById('resultOwnerName').textContent = 'N/A';
+      document.getElementById('resultOwnerCountry').textContent = 'N/A';
+      document.getElementById('resultTechName').textContent = 'N/A';
+      document.getElementById('resultTechCountry').textContent = 'N/A';
+      
+      checkButton.disabled = false;
+      checkButton.innerHTML = originalButtonText;
+    }
+  }
+
+  // Validar formato do domínio
+  function validarDominio(domain) {
+    // Regex simples para validar domínios
+    const regex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    return regex.test(domain);
+  }
+
+  // Consultar WHOIS
+  async function consultarWhois(domain) {
+    try {
+      // Usar o serviço RDAP do Registro.br para domínios .br
+      if (domain.endsWith('.br')) {
+        const response = await fetch(`https://rdap.registro.br/domain/${domain}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Domínio não encontrado');
+          } else {
+            throw new Error(`Erro na consulta: ${response.status}`);
+          }
+        }
+        
+        return await response.json();
+      } else {
+        // Para outros domínios, usar um serviço WHOIS público com proxy CORS
+        const proxyUrl = 'https://corsproxy.io/?';
+        const apiUrl = `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=at_demo&domainName=${domain}&outputFormat=JSON`;
+        
+        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        
+        if (!response.ok) {
+          throw new Error(`Erro na consulta: ${response.status}`);
+        }
+        
+        return await response.json();
+      }
+    } catch (error) {
+      throw new Error(`Falha na consulta WHOIS: ${error.message}`);
+    }
+  }
+
+  // Preencher resultados
+  function preencherResultados(data) {
+    // Verificar se é resposta do Registro.br (RDAP)
+    if (data.handle) {
+      // Formato RDAP (Registro.br)
+      document.getElementById('resultDomain').textContent = data.ldhName || 'N/A';
+      
+      // Status
+      const status = data.status || [];
+      document.getElementById('resultStatus').textContent = status.join(', ') || 'N/A';
+      
+      // Datas
+      const events = data.events || [];
+      let creationDate = 'N/A';
+      let expirationDate = 'N/A';
+      let lastChangedDate = 'N/A';
+      
+      events.forEach(event => {
+        if (event.eventAction === 'registration') {
+          creationDate = formatarData(event.eventDate);
+        } else if (event.eventAction === 'expiration') {
+          expirationDate = formatarData(event.eventDate);
+        } else if (event.eventAction === 'last changed') {
+          lastChangedDate = formatarData(event.eventDate);
+        }
+      });
+      
+      document.getElementById('resultCreated').textContent = creationDate;
+      document.getElementById('resultExpires').textContent = expirationDate;
+      document.getElementById('resultChanged').textContent = lastChangedDate;
+      
+      // Servidores DNS
+      const nameservers = data.nameservers || [];
+      let dnsHtml = '';
+      
+      if (nameservers.length > 0) {
+        nameservers.forEach(ns => {
+          dnsHtml += `
+            <div class="result-item">
+              <div class="result-value">${ns.ldhName || 'N/A'}</div>
+            </div>
+          `;
+        });
+      } else {
+        dnsHtml = '<div class="result-item"><div class="result-value">N/A</div></div>';
+      }
+      
+      document.getElementById('resultDNS').innerHTML = dnsHtml;
+      
+      // Titular e contato técnico
+      const entities = data.entities || [];
+      let ownerName = 'N/A';
+      let ownerCountry = 'N/A';
+      let techName = 'N/A';
+      let techCountry = 'N/A';
+      
+      entities.forEach(entity => {
+        if (entity.roles && entity.roles.includes('registrant')) {
+          ownerName = entity.vcardArray?.[1]?.find(item => item[0] === 'fn')?.[3] || 'N/A';
+          const address = entity.vcardArray?.[1]?.find(item => item[0] === 'adr');
+          ownerCountry = address?.[1]?.['country-name'] || 'N/A';
+        } else if (entity.roles && entity.roles.includes('technical')) {
+          techName = entity.vcardArray?.[1]?.find(item => item[0] === 'fn')?.[3] || 'N/A';
+          const address = entity.vcardArray?.[1]?.find(item => item[0] === 'adr');
+          techCountry = address?.[1]?.['country-name'] || 'N/A';
+        }
+      });
+      
+      document.getElementById('resultOwnerName').textContent = ownerName;
+      document.getElementById('resultOwnerCountry').textContent = ownerCountry;
+      document.getElementById('resultTechName').textContent = techName;
+      document.getElementById('resultTechCountry').textContent = techCountry;
+    } else {
+      // Formato WhoisXML API
+      const whoisRecord = data.WhoisRecord || {};
+      
+      document.getElementById('resultDomain').textContent = whoisRecord.domainName || 'N/A';
+      document.getElementById('resultStatus').textContent = whoisRecord.status || 'N/A';
+      document.getElementById('resultCreated').textContent = whoisRecord.createdDate || 'N/A';
+      document.getElementById('resultExpires').textContent = whoisRecord.expiresDate || 'N/A';
+      document.getElementById('resultChanged').textContent = whoisRecord.updatedDate || 'N/A';
+      
+      // Servidores DNS
+      const nameservers = whoisRecord.nameServers?.hostNames || [];
+      let dnsHtml = '';
+      
+      if (nameservers.length > 0) {
+        nameservers.forEach(ns => {
+          dnsHtml += `
+            <div class="result-item">
+              <div class="result-value">${ns || 'N/A'}</div>
+            </div>
+          `;
+        });
+      } else {
+        dnsHtml = '<div class="result-item"><div class="result-value">N/A</div></div>';
+      }
+      
+      document.getElementById('resultDNS').innerHTML = dnsHtml;
+      
+      // Titular e contato técnico
+      const registrant = whoisRecord.registrant || {};
+      const adminContact = whoisRecord.administrativeContact || {};
+      const techContact = whoisRecord.technicalContact || {};
+      
+      document.getElementById('resultOwnerName').textContent = registrant.name || 'N/A';
+      document.getElementById('resultOwnerCountry').textContent = registrant.country || 'N/A';
+      document.getElementById('resultTechName').textContent = techContact.name || adminContact.name || 'N/A';
+      document.getElementById('resultTechCountry').textContent = techContact.country || adminContact.country || 'N/A';
+    }
+  }
+
+  // Formatar data
+  function formatarData(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  }
+
+  // Limpar formulário
+  function limparFormulario() {
+    document.getElementById('domainName').value = '';
+    document.getElementById('resultContainer').classList.remove('active');
+  }
+
+  // Copiar resultado
+  function copiarResultado() {
+    const domain = document.getElementById('resultDomain').textContent;
+    const status = document.getElementById('resultStatus').textContent;
+    const created = document.getElementById('resultCreated').textContent;
+    const expires = document.getElementById('resultExpires').textContent;
+    const changed = document.getElementById('resultChanged').textContent;
+    
+    // Obter servidores DNS
+    const dnsElements = document.getElementById('resultDNS').querySelectorAll('.result-value');
+    let dnsServers = '';
+    dnsElements.forEach(element => {
+      dnsServers += `${element.textContent}\n`;
+    });
+    
+    const ownerName = document.getElementById('resultOwnerName').textContent;
+    const ownerCountry = document.getElementById('resultOwnerCountry').textContent;
+    const techName = document.getElementById('resultTechName').textContent;
+    const techCountry = document.getElementById('resultTechCountry').textContent;
+    
+    const textoCopiado = 
+      `INFORMAÇÕES DO DOMÍNIO\n` +
+      `Nome do Domínio: ${domain}\n` +
+      `Status: ${status}\n` +
+      `Data de Criação: ${created}\n` +
+      `Data de Expiração: ${expires}\n` +
+      `Última Atualização: ${changed}\n\n` +
+      `SERVIDORES DNS\n${dnsServers}\n` +
+      `TITULAR\n` +
+      `Nome: ${ownerName}\n` +
+      `País: ${ownerCountry}\n\n` +
+      `CONTATO TÉCNICO\n` +
+      `Nome: ${techName}\n` +
+      `País: ${techCountry}`;
+    
+    navigator.clipboard.writeText(textoCopiado)
+      .then(() => mostrarNotificacao('Resultado copiado para a área de transferência!'))
+      .catch(err => mostrarNotificacao('Erro ao copiar: ' + err));
+  }
+
+  // Mostrar notificação
+  function mostrarNotificacao(mensagem) {
+    const notification = document.getElementById('notification');
+    notification.textContent = mensagem;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 3000);
+  }
+
+  // Permitir pressionar Enter para verificar
+  document.getElementById('domainName').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      verificarDominio();
+    }
+  });
+</script>
+	<!---
+	                                                  
+                                                  
+                                                  
+                                                  
+                            ########              
+                          ######  ####            
+                          ######  ############    
+                          ##################      
+                            ########              
+                            ######                
+                            ######                
+                            ######                
+                            ########              
+                          ############            
+                        ##############            
+                      ##################          
+          ##############################          
+        ################################          
+        ################################          
+          ############################            
+                ####################              
+                    ####                          
+                    ########                      
+                                                  
+                                                  
+	--->
+</body>
+</html>
+

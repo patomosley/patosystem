@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>Sistema de Solicitação</title>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <style>
+    * { 
+      box-sizing: border-box; 
+    }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --menu-hover: #f0f0f0;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+      --modal-bg: #ffffff;
+      --modal-overlay: rgba(0,0,0,0.5);
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --menu-hover: #2d2d2d;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+      --modal-bg: #1e1e1e;
+      --modal-overlay: rgba(0,0,0,0.7);
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .content {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      background: var(--bg-primary);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      margin: 20px auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      position: relative;
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    h3 {
+      color: var(--text-primary);
+      font-size: 18px;
+      margin-top: 25px;
+      margin-bottom: 15px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .materials-section {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .material-item {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    .material-input {
+      flex: 2;
+    }
+
+    .quantity-input {
+      flex: 1;
+      max-width: 150px;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--menu-hover);
+    }
+
+    .remove-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      min-width: 80px;
+    }
+
+    .remove-btn:hover {
+      background: var(--menu-hover);
+      color: var(--text-primary);
+    }
+
+    .add-material-btn {
+      background: transparent;
+      border: 1px solid var(--accent-color);
+      color: var(--accent-color);
+      margin-top: 15px;
+    }
+
+    .add-material-btn:hover {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .btn-link {
+      background: transparent;
+      color: var(--accent-color);
+      text-decoration: none;
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-link:hover {
+      text-decoration: underline;
+      background: transparent;
+      transform: translateY(-2px);
+    }
+
+    .btn-link:before {
+      content: "←";
+      margin-right: 5px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 0; 
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(3px);
+      background: var(--modal-overlay);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--modal-bg);
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .modal-header {
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--text-primary);
+    }
+
+    .result-item {
+      margin-bottom: 20px;
+    }
+
+    .result-item h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result-text {
+      text-align: left;
+      background: var(--bg-secondary);
+      padding: 15px;
+      border-radius: 6px;
+      overflow: auto;
+      color: var(--text-primary);
+      font-family: monospace;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-secondary);
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .notification.success {
+      background: #28a745;
+    }
+
+    .notification.error {
+      background: #dc3545;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .content {
+        padding: 20px;
+        margin: 10px;
+        width: calc(100% - 20px);
+      }
+      
+      .material-item {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .quantity-input {
+        max-width: 100%;
+      }
+      
+      .modal-content {
+        width: 95%;
+      }
+      
+      .buttons-container {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <h1>PATO SO - Solicitação de Material via Tiflux</h1>
+
+    <form id="materialForm">
+      <div class="form-group">
+        <label for="clientName">NOME DO CLIENTE:</label>
+        <input type="text" id="clientName" name="clientName" required>
+      </div>
+
+      <div class="form-group">
+        <label for="projectChild">PROJETO FILHO:</label>
+        <input type="text" id="projectChild" name="projectChild" required>
+      </div>
+
+      <div class="materials-section">
+        <h3>Material a ser solicitado</h3>
+        <div id="materialsContainer">
+          <div class="material-item">
+            <div class="material-input">
+              <label>MATERIAL:</label>
+              <input type="text" name="material" required>
+            </div>
+            <div class="quantity-input">
+              <label>QUANTIDADE:</label>
+              <input type="text" name="quantity" required>
+            </div>
+            <button type="button" class="remove-btn" onclick="removeMaterial(this)" style="display: none;">Remover</button>
+          </div>
+        </div>
+        <button type="button" class="add-material-btn" onclick="addMaterial()">+ Adicionar Material</button>
+      </div>
+
+      <div class="buttons-container">
+        <button type="submit" class="btn-primary">Gerar Solicitação</button>
+        <button type="button" class="btn-link" onclick="voltarPagina()">Voltar à Página Principal</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Solicitação Gerada</h2>
+      </div>
+      <div class="result-item">
+        <h3>
+          Título da Solicitação
+          <button class="copy-button" onclick="copyText('titleText')" title="Copiar Título">
+            <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+              <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+            </svg>
+          </button>
+        </h3>
+        <div class="result-text" id="titleText"></div>
+      </div>
+      <div class="result-item">
+        <h3>
+          Descrição da Solicitação
+          <button class="copy-button" onclick="copyText('descriptionText')" title="Copiar Descrição">
+            <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+              <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+            </svg>
+          </button>
+        </h3>
+        <div class="result-text" id="descriptionText"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+
+  <script>
+    // Contador de materiais
+    let materialCount = 1;
+
+    // Função para adicionar um novo material
+    function addMaterial() {
+      materialCount++;
+      const container = document.getElementById('materialsContainer');
+      const newMaterial = document.createElement('div');
+      newMaterial.className = 'material-item';
+      newMaterial.innerHTML = `
+        <div class="material-input">
+          <label>MATERIAL:</label>
+          <input type="text" name="material" required>
+        </div>
+        <div class="quantity-input">
+          <label>QUANTIDADE:</label>
+          <input type="text" name="quantity" required>
+        </div>
+        <button type="button" class="remove-btn" onclick="removeMaterial(this)">Remover</button>
+      `;
+      container.appendChild(newMaterial);
+      updateRemoveButtons();
+      showNotification('Material adicionado com sucesso!', 'success');
+    }
+
+    // Função para remover um material
+    function removeMaterial(button) {
+      const materialItem = button.parentElement;
+      materialItem.remove();
+      materialCount--;
+      updateRemoveButtons();
+      showNotification('Material removido com sucesso!', 'success');
+    }
+
+    // Função para atualizar a visibilidade dos botões de remoção
+    function updateRemoveButtons() {
+      const removeButtons = document.querySelectorAll('.remove-btn');
+      removeButtons.forEach(btn => {
+        btn.style.display = materialCount > 1 ? 'block' : 'none';
+      });
+    }
+
+    // Função para exibir notificações
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.style.display = 'block';
+      notification.classList.add('show');
+
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          notification.style.display = 'none';
+        }, 300);
+      }, 3000);
+    }
+
+    // Função para copiar texto para a área de transferência
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showNotification('Texto copiado para a área de transferência!', 'success');
+      }).catch(() => {
+        showNotification('Erro ao copiar texto!', 'error');
+      });
+    }
+
+    // Função para fechar o modal
+    function closeModal() {
+      document.getElementById('resultModal').style.display = 'none';
+    }
+
+    // Função para voltar à página principal
+    function voltarPagina() {
+      // Redirecionamento direto sem confirmação
+      window.location.href = '../index.html';
+    }
+
+    // Event listener para fechar modal com ESC
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Event listener para fechar modal clicando fora
+    document.getElementById('resultModal').addEventListener('click', function(event) {
+      if (event.target === this) {
+        closeModal();
+      }
+    });
+
+    // Form submit handler
+    document.getElementById('materialForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const clientName = document.getElementById('clientName').value;
+      const projectChild = document.getElementById('projectChild').value;
+      const materials = document.querySelectorAll('input[name="material"]');
+      const quantities = document.querySelectorAll('input[name="quantity"]');
+
+      // Validação
+      if (!clientName || !projectChild) {
+        showNotification('Por favor, preencha todos os campos obrigatórios.', 'error');
+        return;
+      }
+
+      let hasMaterial = false;
+      materials.forEach((material, index) => {
+        if (material.value.trim() && quantities[index].value.trim()) {
+          hasMaterial = true;
+        }
+      });
+
+      if (!hasMaterial) {
+        showNotification('Por favor, adicione pelo menos um material com quantidade.', 'error');
+        return;
+      }
+
+      // Gerar título
+      const title = `Solicitação de Material - ${clientName} - ${projectChild}`;
+      document.getElementById('titleText').textContent = title;
+
+      // Gerar descrição
+      let description = `Cliente: ${clientName}\nProjeto Filho: ${projectChild}\n\nMateriais solicitados:\n`;
+      materials.forEach((material, index) => {
+        const materialValue = material.value.trim();
+        const quantityValue = quantities[index].value.trim();
+        if (materialValue && quantityValue) {
+          description += `- ${materialValue}: ${quantityValue} unidade(s)\n`;
+        }
+      });
+
+      document.getElementById('descriptionText').textContent = description;
+      document.getElementById('resultModal').style.display = 'flex';
+    });
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      if (currentTheme === 'dark') {
+        themeToggle.textContent = '☀️';
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      let theme = document.documentElement.getAttribute('data-theme');
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '☀️';
+      }
+      // Update accent color RGB for box-shadow focus
+      updateAccentColorRGB(); 
+    });
+    
+    // Função para atualizar a cor de destaque RGB para o efeito de foco
+    function updateAccentColorRGB() {
+      const root = document.documentElement;
+      const accentColor = getComputedStyle(root).getPropertyValue('--accent-color').trim();
+      // Lógica básica de conversão (assumindo formato hex #RRGGBB)
+      if (accentColor.startsWith('#')) {
+        const r = parseInt(accentColor.substring(1, 3), 16);
+        const g = parseInt(accentColor.substring(3, 5), 16);
+        const b = parseInt(accentColor.substring(5, 7), 16);
+        root.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+      }
+    }
+    
+    // Atualização inicial
+    updateAccentColorRGB();
+  </script>
+</body>
+</html>

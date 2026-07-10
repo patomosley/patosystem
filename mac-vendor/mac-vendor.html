@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>MAC Vendor Lookup</title>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg-primary);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      padding: 30px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: var(--bg-secondary);
+      transform: translateY(-2px);
+    }
+
+    .back-button svg {
+      margin-right: 6px;
+      width: 16px;
+      height: 16px;
+      fill: var(--text-primary);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* Resultado */
+    .result-container {
+      margin-top: 30px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      display: none;
+      border: 1px solid var(--border-color);
+    }
+
+    .result-container.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-secondary);
+    }
+
+    .result-item {
+      margin-bottom: 15px;
+    }
+
+    .result-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .result-value {
+      font-size: 15px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      word-break: break-all;
+    }
+
+    .notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      animation: fadeNotificationInOut 3s forwards;
+      font-size: 14px;
+    }
+    
+    @keyframes fadeNotificationInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <a href="javascript:history.back()" class="back-button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Voltar
+    </a>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+  </div>
+  
+  <h1>PATO - MAC VENDOR</h1>
+
+  <div class="form-group">
+    <label for="macAddress">Endereço MAC:</label>
+    <input type="text" id="macAddress" placeholder="Ex: 00:11:22:33:44:55 ou 00-11-22-33-44-55">
+  </div>
+
+  <div class="buttons-container">
+    <button id="checkButton" onclick="verificarMAC()">Verificar Fabricante</button>
+    <button class="secondary" onclick="limparFormulario()">Limpar</button>
+  </div>
+
+  <div class="result-container" id="resultContainer">
+    <div class="result-header">
+      <h3 class="result-title">Resultado da Consulta</h3>
+      <button class="copy-button" onclick="copiarResultado()" title="Copiar Resultado">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Endereço MAC</div>
+      <div class="result-value" id="resultMac"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Fabricante</div>
+      <div class="result-value" id="resultVendor"></div>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+  // Alternar tema claro/escuro
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    this.textContent = newTheme === 'light' ? '🌙' : '☀️';
+  });
+
+  // Verificar MAC
+  async function verificarMAC() {
+    const macInput = document.getElementById('macAddress').value.trim();
+    const checkButton = document.getElementById('checkButton');
+    
+    if (!macInput) {
+      mostrarNotificacao('Por favor, insira um endereço MAC.');
+      return;
+    }
+    
+    // Limpar o MAC para remover caracteres especiais
+    const macLimpo = macInput.replace(/[^a-fA-F0-9]/g, '');
+    
+    // Verificar se o MAC tem pelo menos 6 caracteres (3 bytes)
+    if (macLimpo.length < 6) {
+      mostrarNotificacao('Endereço MAC inválido. Verifique e tente novamente.');
+      return;
+    }
+    
+    try {
+      // Formatar o MAC para exibição (formato XX:XX:XX:XX:XX:XX)
+      const macFormatado = formatarMAC(macLimpo);
+      
+      // Mostrar o resultado com indicador de carregamento
+      document.getElementById('resultMac').textContent = macFormatado;
+      document.getElementById('resultVendor').textContent = 'Consultando...';
+      document.getElementById('resultContainer').classList.add('active');
+      
+      // Desabilitar o botão e mostrar spinner durante a consulta
+      const originalButtonText = checkButton.innerHTML;
+      checkButton.disabled = true;
+      checkButton.innerHTML = '<span class="spinner"></span>Consultando...';
+      
+      // Criar um proxy CORS para acessar a API do macvendors.com
+      const macAddress = macLimpo.substring(0, 6); // Usamos apenas os primeiros 6 dígitos (OUI)
+      const apiUrl = `https://api.macvendors.com/${macAddress}`;
+      
+      try {
+        // Usar um serviço de proxy CORS para contornar restrições de CORS
+        const proxyUrl = 'https://corsproxy.io/?';
+        const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+        
+        if (response.ok) {
+          const vendor = await response.text();
+          document.getElementById('resultVendor').textContent = vendor;
+        } else if (response.status === 404) {
+          document.getElementById('resultVendor').textContent = 'Fabricante não encontrado';
+        } else {
+          document.getElementById('resultVendor').textContent = `Erro na consulta: ${response.status}`;
+        }
+      } catch (error) {
+        document.getElementById('resultVendor').textContent = `Erro na consulta: ${error.message}`;
+      } finally {
+        // Restaurar o botão
+        checkButton.disabled = false;
+        checkButton.innerHTML = originalButtonText;
+      }
+    } catch (error) {
+      document.getElementById('resultVendor').textContent = `Erro: ${error.message}`;
+      checkButton.disabled = false;
+      checkButton.innerHTML = originalButtonText;
+    }
+  }
+
+  // Formatar MAC para exibição
+  function formatarMAC(mac) {
+    // Garantir que temos apenas caracteres hexadecimais
+    const macHex = mac.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
+    
+    // Formatar como XX:XX:XX:XX:XX:XX se tivermos 12 caracteres
+    if (macHex.length === 12) {
+      return macHex.match(/.{1,2}/g).join(':');
+    }
+    
+    // Se não tivermos 12 caracteres, formatar o que temos
+    return macHex.match(/.{1,2}/g)?.join(':') || macHex;
+  }
+
+  // Limpar formulário
+  function limparFormulario() {
+    document.getElementById('macAddress').value = '';
+    document.getElementById('resultContainer').classList.remove('active');
+  }
+
+  // Copiar resultado
+  function copiarResultado() {
+    const mac = document.getElementById('resultMac').textContent;
+    const vendor = document.getElementById('resultVendor').textContent;
+    const textoCopiado = `MAC: ${mac}\nFabricante: ${vendor}`;
+    
+    navigator.clipboard.writeText(textoCopiado)
+      .then(() => mostrarNotificacao('Resultado copiado para a área de transferência!'))
+      .catch(err => mostrarNotificacao('Erro ao copiar: ' + err));
+  }
+
+  // Mostrar notificação
+  function mostrarNotificacao(mensagem) {
+    const notification = document.getElementById('notification');
+    notification.textContent = mensagem;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 3000);
+  }
+
+  // Permitir pressionar Enter para verificar
+  document.getElementById('macAddress').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      verificarMAC();
+    }
+  });
+</script>
+
+</body>
+</html>
+

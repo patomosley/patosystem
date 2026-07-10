@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <title>Sistema de Geração de Padrões para Eventos</title>
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --menu-hover: #f0f0f0;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+      --modal-bg: #ffffff;
+      --modal-overlay: rgba(0,0,0,0.5);
+      --success-color: #2ecc71;
+      --success-hover: #27ae60;
+      --error-color: #e74c3c;
+      --error-hover: #c0392b;
+      --secondary-color: #95a5a6;
+      --secondary-hover: #7f8c8d;
+      --purple-color: #9b59b6;
+      --purple-hover: #8e44ad;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --menu-hover: #2d2d2d;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+      --modal-bg: #1e1e1e;
+      --modal-overlay: rgba(0,0,0,0.7);
+      --success-color: #2ecc71;
+      --success-hover: #27ae60;
+      --error-color: #e74c3c;
+      --error-hover: #c0392b;
+      --secondary-color: #607d8b;
+      --secondary-hover: #546e7a;
+      --purple-color: #9b59b6;
+      --purple-hover: #8e44ad;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+      width: auto;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .back-button {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: var(--secondary-color);
+      border: none;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+      width: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .back-button:hover {
+      background: var(--secondary-hover);
+      transform: translateY(-2px);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      background: var(--bg-primary);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      margin: 60px auto 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      position: relative;
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    h3 {
+      color: var(--text-primary);
+      font-size: 18px;
+      margin-bottom: 15px;
+      margin-top: 25px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    /* Searchable Select Styles */
+    .searchable-select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .searchable-select-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .searchable-select-input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .searchable-select-input.active {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-color: var(--accent-color);
+    }
+
+    .search-input-field {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .search-input-field:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .searchable-select-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-primary);
+      border: 1px solid var(--input-border);
+      border-top: none;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    .searchable-select-dropdown.active {
+      display: block;
+    }
+
+    .searchable-select-option {
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    .searchable-select-option:hover {
+      background: var(--menu-hover);
+      color: var(--accent-color);
+    }
+
+    .searchable-select-option.selected {
+      background: var(--accent-color);
+      color: white;
+      font-weight: 600;
+    }
+
+    .searchable-select-option.no-results {
+      padding: 12px 14px;
+      text-align: center;
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    .searchable-select-option.no-results:hover {
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+    }
+
+    .dropdown-arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--text-secondary);
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+
+    .searchable-select-input.active .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .flex-container {
+      display: flex;
+      gap: 15px;
+    }
+
+    .flex-container .form-group {
+      flex: 1;
+    }
+
+    .section-divider {
+      margin: 30px 0 20px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 10px;
+    }
+
+    .child-config {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .child-inputs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .child-inputs input, .child-inputs select {
+      flex: 1;
+    }
+
+    .child-count {
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 12px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: var(--secondary-color);
+      width: auto;
+    }
+    
+    button.secondary:hover {
+      background: var(--secondary-hover);
+    }
+
+    button.success {
+      background: var(--success-color);
+      width: auto;
+    }
+    
+    button.success:hover {
+      background: var(--success-hover);
+    }
+
+    button.purple {
+      background: var(--purple-color);
+    }
+    
+    button.purple:hover {
+      background: var(--purple-hover);
+    }
+
+    /* Modal (Popup) Styles */
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(3px);
+      background: var(--modal-overlay);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .popup-content {
+      background: var(--modal-bg);
+      padding: 25px 30px;
+      border-radius: 12px;
+      max-width: 700px;
+      width: 95%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px var(--shadow-color);
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .popup-header h2 {
+      color: var(--text-primary);
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      width: auto;
+      padding: 0;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+    .close-btn:hover {
+      color: var(--error-color);
+    }
+
+    .project-container {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .project-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .project-value {
+      word-break: break-word;
+      padding: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      color: var(--text-primary);
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .copy-btn {
+      background-color: transparent;
+      color: var(--text-secondary);
+      border: none;
+      padding: 5px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+    }
+
+    .copy-btn:hover {
+      background-color: var(--menu-hover);
+      color: var(--accent-color);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .copy-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      margin: 0;
+    }
+
+    .copy-all-btn {
+      background-color: var(--purple-color);
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px 16px;
+    }
+
+    .copy-all-btn:hover {
+      background-color: var(--purple-hover);
+      transform: translateY(-2px);
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      z-index: 200;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .success {
+      background-color: var(--success-color);
+    }
+
+    .error {
+      background-color: var(--error-color);
+    }
+
+    /* Info badge para o padrão do evento */
+    .pattern-info {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-color);
+      border-radius: 6px;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .pattern-info strong {
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+        margin: 70px 10px 10px;
+        width: calc(100% - 20px);
+      }
+      .flex-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .child-inputs {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .popup-content {
+        width: 95%;
+        padding: 20px;
+      }
+      .back-button {
+        top: 10px;
+        left: 10px;
+      }
+      .theme-toggle {
+        top: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-button" onclick="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    Voltar
+  </button>
+  <button class="theme-toggle" id="themeToggle">🌙</button>
+  
+  <div class="container">
+    <h1>PATO SO - CRIAÇÃO DE DIAGRAMAS</h1>
+
+    <div class="pattern-info">
+      Padrão gerado: <strong>EVENTO-NOMEDOEVENTO-SIGLACIDADE-ESTADO-ANO</strong><br>
+      Exemplo: <strong>EVENTO-SAOJOAODEMARACANAU-MCW-CE-2026</strong>
+    </div>
+    
+    <form id="form">
+      <h3>Dados do Evento</h3>
+
+      <div class="form-group">
+        <label for="nomeEvento">NOME DO EVENTO:</label>
+        <input type="text" id="nomeEvento" placeholder="Ex: SAO JOAO DE MARACANAU" required>
+        <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display:block;">
+          Espaços e acentos serão removidos automaticamente.
+        </small>
+      </div>
+
+      <div class="flex-container">
+        <div class="form-group">
+          <label for="estado">ESTADO:</label>
+          <div class="searchable-select-wrapper">
+            <div class="searchable-select-input" id="estadoInput">
+              <span id="estadoText">Selecionar opção</span>
+              <div class="dropdown-arrow"></div>
+            </div>
+            <input type="text" class="search-input-field" id="estadoSearch" placeholder="Digite para buscar..." style="display: none;">
+            <div class="searchable-select-dropdown" id="estadoDropdown"></div>
+            <input type="hidden" id="estado" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cidade">CIDADE:</label>
+          <div id="cidadeContainer"></div>
+          <input type="hidden" id="cidade" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="ano">ANO:</label>
+        <input type="number" id="ano" placeholder="Ex: 2026" min="2020" max="2099" required>
+      </div>
+
+      <!-- Preview ao vivo -->
+      <div class="form-group">
+        <label>PRÉ-VISUALIZAÇÃO DO PROJETO:</label>
+        <div id="preview" class="project-value" style="color: var(--text-secondary); font-style: italic;">
+          Preencha os campos para visualizar o padrão...
+        </div>
+      </div>
+
+      <button type="submit" style="margin-top: 20px;">Gerar Padrão</button>
+    </form>
+    
+    <div id="notification" class="notification"></div>
+  </div>
+  
+  <div id="popup" class="popup">
+    <div class="popup-content">
+      <div class="popup-header">
+        <h2>Padrão Gerado</h2>
+        <button id="closePopup" class="close-btn" title="Fechar">&times;</button>
+      </div>
+      
+      <div class="project-container">
+        <div class="project-label">PROJETO EVENTO:</div>
+        <div id="projetoEvento" class="project-value"></div>
+        <button id="copyProjetoEvento" class="copy-btn" title="Copiar">
+          <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+            <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ==================== UTILITÁRIOS ====================
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function showNotification(message, type) {
+      const notification = document.getElementById("notification");
+      notification.textContent = message;
+      notification.className = "notification " + type;
+      notification.style.display = "block";
+      notification.classList.add("show");
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => {
+          notification.style.display = "none";
+        }, 300);
+      }, 3000);
+    }
+
+    // Normaliza texto: remove acentos, espaços → sem separador, maiúsculas
+    function normalizarTexto(texto) {
+      return texto
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove acentos
+        .replace(/\s+/g, '')             // remove espaços
+        .replace(/[^A-Z0-9]/g, '');      // remove caracteres especiais
+    }
+
+    // ==================== DADOS ====================
+
+    const estadosCidades = {
+      CE: {
+        "AQUIRAZ": "AQZ", "BEBERIBE": "BBB", "CASCAVEL": "CVL", "CAUCAIA": "CUC",
+        "CHOROZINHO": "CZH", "EUSEBIO": "ESB", "FORTALEZA": "FLA", "GUAIUBA": "GBA",
+        "HORIZONTE": "HZT", "ITAITINGA": "IAG", "MARACANAU": "MCW", "MARANGUAPE": "MUE",
+        "PACAJUS": "PJS", "PACATUBA": "PUB", "PINDORETAMA": "PDJ",
+        "SAO GONCALO DO AMARANTE": "SGA", "ACARAPE": "ACP", "APUIARES": "AUS",
+        "ARACOIABA": "AAA", "ARATUBA": "ATU", "BARREIRA": "BRK", "BATURITE": "BTT",
+        "CANINDE": "CIE", "CAPISTRANO": "CSR", "CARIDADE": "CID",
+        "GENERAL SAMPAIO": "GNL", "GUARAMIRANGA": "GAG", "MULUNGU": "MUN",
+        "OCARA": "OCR", "PACOTI": "PTY", "PALMACIA": "PMC", "PARAMOTI": "POY",
+        "REDENCAO": "RDC", "ITAPAGE": "IGE", "PARACURU": "PUU", "PARAIPABA": "PBP",
+        "PENTECOSTE": "POE", "SAO LUIS DO CURU": "SRU", "TEJUCUOCA": "TJU",
+        "TRAIRI": "TRY", "TURURU": "TUK", "UMIRIM": "URM", "URUBURETAMA": "UUA",
+        "ALTO SANTO": "ATO", "ARACATI": "ACA", "FORTIM": "FORT",
+        "IBICUITINGA": "ICN", "ICAPUI": "ICP", "IRACEMA": "ICA", "ITAICABA": "IAX",
+        "JAGUARUANA": "JGN", "LIMOEIRO DO NORTE": "LNT", "MORADA NOVA": "MVA",
+        "PALHANO": "PHN", "POTIRETAMA": "PTZ", "QUIXERE": "QXE", "RUSSAS": "RUS",
+        "SAO JOAO DO JAGUARIBE": "SUB", "TABULEIRO DO NORTE": "TNT",
+        "ABAIARA": "ABY", "AURORA": "AUR", "BARBALHA": "BBH", "BARRO": "BAO",
+        "BREJO SANTO": "BJS", "CARIRIACU": "CAC", "CRATO": "CTO",
+        "GRANJEIRO": "GJO", "JARDIM": "JDM", "JATI": "JAT",
+        "JUAZEIRO DO NORTE": "JNE", "MAURITI": "MRT", "MILAGRES": "MGS",
+        "MISSAO VELHA": "MAH", "PENAFORTE": "PFT", "PORTEIRAS": "PTX",
+        "VARZEA ALEGRE": "VZG", "AIUABA": "AIB", "ALTANEIRA": "ANY",
+        "ANTONINA DO NORTE": "ANE", "ARARIPE": "ARP", "ASSARE": "ASE",
+        "CAMPOS SALES": "CMS", "FARIAS BRITO": "FBO", "NOVA OLINDA": "NID",
+        "POTENGI": "PGY", "SALITRE": "SIQ", "SANTANA DO CARIRI": "SCI",
+        "TARRAFAS": "TRR", "ALCANTARAS": "ACX", "AMONTADA": "AOW", "CARIRE": "CIW",
+        "CATUNDA": "CATN", "COREAU": "CEA", "FORQUILHA": "FRQ", "GROAIRAS": "GRO",
+        "HIDROLANDIA": "HDA", "IRAUCUBA": "ICB", "ITAPIPOCA": "IOP",
+        "MASSAPE": "MSS", "MERUOCA": "MEU", "MIRAIMA": "MIK", "MORAUJO": "MUJ",
+        "RERIUTABA": "RRB", "SANTA QUITERIA": "SNQ", "SANTANA DO ACARAU": "SAU",
+        "SOBRAL": "SOL", "VARJOTA": "VJT", "CARNAUBAL": "CUB", "CROATA": "COZ",
+        "FRECHEIRINHA": "FHH", "GRACA": "GCA", "GUARACIABA DO NORTE": "GRN",
+        "IBIAPINA": "INX", "MUCAMBO": "MUM", "PACUJA": "PUJ",
+        "SAO BENEDITO": "SBN", "TIANGUA": "TIG", "UBAJARA": "UBJ",
+        "VICOSA DO CEARA": "VCC", "ACARAU": "AAU", "BARROQUINHA": "BQN",
+        "BELA CRUZ": "BCZ", "CAMOCIM": "CCM", "CHAVAL": "CHA", "CRUZ": "CZW",
+        "GRANJA": "GNJ", "ITAREMA": "IMW", "JIJOCA DE JERICOACOARA": "JIJ",
+        "MARCO": "MAC", "MARTINOPOLE": "MOP", "MORRINHOS": "MNH",
+        "SENADOR SA": "SNR", "URUOCA": "UUO", "ACOPIARA": "ACR", "CARIUS": "CYS",
+        "CATARINA": "CYN", "IGUATU": "IAU", "JUCAS": "JAS", "MOMBACA": "MBC",
+        "PEDRA BRANCA": "PDB", "PIQUET CARNEIRO": "PQT", "QUIXELO": "QXO",
+        "SABOEIRO": "SOI", "BAIXIO": "BXO", "CEDRO": "CED",
+        "DEPUTADO IRAPUAN PINHEIRO": "DPI", "ICO": "ICO", "IPAUMIRIM": "IMI",
+        "JAGUARETAMA": "JAG", "JAGUARIBARA": "JGB", "JAGUARIBE": "JGE",
+        "LAVRAS DA MANGABEIRA": "LVM", "MILHA": "MHW", "OROS": "OOS",
+        "PEREIRO": "PEO", "SOLONOPOLE": "SOP", "UMARI": "UMI", "CRATEUS": "CTS",
+        "INDEPENDENCIA": "IDA", "NOVO ORIENTE": "NOE",
+        "QUITERIANOPOLIS": "QTS", "ARARENDA": "ARA", "IPAPORANGA": "IPZ",
+        "IPU": "IPU", "IPUEIRAS": "IUE", "MONSENHOR TABOSA": "MHT",
+        "NOVA RUSSAS": "NRU", "PIRES FERREIRA": "PSF", "PORANGA": "PGX",
+        "TAMBORIL": "TBL", "ARNEIROZ": "AEZ", "PARAMBU": "PBU", "TAUA": "TUA",
+        "BANABUIU": "BIU", "BOA VIAGEM": "BVG", "CHORO": "CHO",
+        "IBARETAMA": "IBT", "ITAPIUNA": "ITN", "ITATIRA": "ITK",
+        "MADALENA": "MDX", "QUIXADA": "QXA", "QUIXERAMOBIM": "QXM",
+        "SENADOR POMPEU": "SPM"
+      },
+      RN: {
+        "NATAL": "NTL", "PARNAMIRIM": "PWM", "MOSSORO": "MRO",
+        "SAO GONCALO DO AMARANTE": "SGM", "MACAIBA": "MCI",
+        "EXTREMOZ": "EXZ", "CANGUARETAMA": "CGM", "CAICO": "CIC",
+        "NOVA CRUZ": "NCZ", "CURRAIS NOVOS": "CSN", "ASSU": "ACU",
+        "CEARA-MIRIM": "CAY", "SANTA CRUZ": "SNZ",
+        "JOAO CAMARA": "JOA", "TOUROS": "TUS", "PARELHAS": "PRH",
+        "APODI": "APD", "PAU DOS FERROS": "PFR", "AREIA BRANCA": "ABC",
+        "BARAUNA": "BRN", "CARAUBA": "CRB", "JANUARIO CICCO": "BASD",
+        "NISIA FLORESTA": "NSF", "MACAU": "MCU", "SAO JOSE DE MIPIBU": "SII",
+        "RIO DO FOGO": "ROFG", "TIBAU DO SUL": "TUL", "GOIANINHA": "GOH",
+        "LAJES": "LJE", "SANTA MARIA": "SAAI", "ANGICOS": "ANO",
+        "GUAMARE": "GME", "JANDAIRA": "JDR", "PENDENCIAS": "PNS",
+        "PORTO DO MANGUE": "POMA", "ALTA DO RODRIGUES": "ADG",
+        "AFONSO BEZERRA": "AFZ"
+      },
+      PB: {
+        "JOAO PESSOA": "JPA", "CAMPINA GRANDE": "CGE", "SANTA RITA": "SRI",
+        "BAYEUX": "BEX", "CABEDELO": "CBD", "SOUSA": "SOA",
+        "PATOS": "PAS", "GUARABIRA": "GBI", "MAMANGUAPE": "MME",
+        "CAJAZEIRAS": "CAJ", "ITABAIANA": "IYN", "ALHANDRA": "AHD",
+        "CAAPORA": "CPX", "CONDE": "CWX", "PEDRAS DE FOGO": "PFO",
+        "SAPE": "SPH", "RIO TINTO": "RTT", "ARARA": "ARX",
+        "ARARUNA": "AAN", "BANANEIRAS": "BNN", "ARACAGI": "AAG",
+        "BELEM": "BEM", "ESPERANCA": "ERA", "LAGOA SECA": "LGCM",
+        "MASSARANDUBA": "MNU", "PILAR": "PYR"
+      },
+      AL: {
+        "MACEIO": "MCZ", "ARAPIRACA": "ARA", "PALMEIRA DOS INDIOS": "PIO",
+        "RIO LARGO": "RLG", "PENEDO": "PNO", "UNIAO DOS PALMARES": "UPL",
+        "SAO MIGUEL DOS CAMPOS": "SMC", "CORURIPE": "CRP",
+        "MARECHAL DEODORO": "MDO", "DELMIRO GOUVEIA": "DGA",
+        "MURICI": "MRC", "CAMPO ALEGRE": "CAG", "PIRANHAS": "PYH"
+      },
+      BA: {
+        "SALVADOR": "SDR", "FEIRA DE SANTANA": "FSA", "VITORIA DA CONQUISTA": "VDA",
+        "CAMACARI": "CAR", "ITABUNA": "ITB", "ILHEUS": "ILH",
+        "LAURO DE FREITAS": "LFS", "JEQUIE": "JEE", "TEIXEIRA DE FREITAS": "TAF",
+        "ALAGOINHAS": "ALH", "PORTO SEGURO": "PGU", "SIMOES FILHO": "SMF",
+        "JACOBINA": "JBN", "BARREIRAS": "BES", "JUAZEIRO": "JUO",
+        "EUNAPOLIS": "EUS", "PAULO AFONSO": "PAF", "CAMACAN": "CNC",
+        "DIAS D AVILA": "DSA", "SERRINHA": "SEH"
+      },
+      PI: {
+        "TERESINA": "TSA", "PARNAIBA": "PNAB", "PICOS": "PCZ",
+        "PIRIPIRI": "PIP", "FLORIANO": "FLO", "CAMPO MAIOR": "CRA",
+        "BARRAS": "BRZ", "ESPERANTINA": "ENA", "JOSE DE FREITAS": "JFT",
+        "UNIAO": "UIO", "ALTOS": "ATS", "BOM JESUS": "BOM",
+        "OEIRAS": "OES", "SAO JOAO DO PIAUI": "SPI",
+        "SAO RAIMUNDO NONATO": "SRN", "CORRENTE": "CNT"
+      },
+      MA: {
+        "SAO LUIS": "SLZ", "IMPERATRIZ": "IPZ", "SAO JOSE DE RIBAMAR": "SJR",
+        "TIMON": "TIN", "CAXIAS": "CXS", "CODÓ": "COO",
+        "PAÇO DO LUMIAR": "PCL", "ACAILANDIA": "ACI",
+        "BACABAL": "BCB", "BALSAS": "BLS", "SANTA INES": "SAT",
+        "BARRA DO CORDA": "BDC", "PINHEIRO": "PHO"
+      },
+      PE: {
+        "RECIFE": "REC", "CARUARU": "CAU", "OLINDA": "OND",
+        "PAULISTA": "PLT", "JABOATAO DOS GUARARAPES": "JBT",
+        "PETROLINA": "PEO", "CAMARAGIBE": "CMG", "GARANHUNS": "GRH",
+        "VITORIA DE SANTO ANTAO": "VSA", "SAO LOURENCO DA MATA": "SLM",
+        "CABO DE SANTO AGOSTINHO": "CSA", "CARPINA": "CPR",
+        "SURUBIM": "SBM", "SANTA CRUZ DO CAPIBARIBE": "SCC"
+      },
+      SE: {
+        "ARACAJU": "AJU", "NOSSA SENHORA DO SOCORRO": "NRO",
+        "LAGARTO": "LAT", "ITABAIANA": "INT", "SAO CRISTOVAO": "SCV",
+        "ESTANCIA": "ETC", "TOBIAS BARRETO": "TBB",
+        "Nossa SENHORA DAS DORES": "NSD", "SIMAO DIAS": "SDS",
+        "BARRA DOS COQUEIROS": "BQS", "PROPRIA": "PPI"
+      },
+      PR: {
+        "CASCAVEL": "CSC", "CURITIBA": "CWB", "LONDRINA": "LDB",
+        "MARINGA": "MGF", "PONTA GROSSA": "PGG", "FOZ DO IGUACU": "FIG"
+      }
+    };
+
+    const estados = Object.keys(estadosCidades).sort();
+
+    // ==================== SEARCHABLE SELECT ====================
+
+    class SearchableSelect {
+      constructor(inputId, searchId, dropdownId, hiddenInputId, options) {
+        this.inputElement = document.getElementById(inputId);
+        this.searchElement = document.getElementById(searchId);
+        this.dropdownElement = document.getElementById(dropdownId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.options = options;
+        this.selectedValue = null;
+        this.init();
+      }
+
+      init() {
+        this.renderOptions(this.options);
+        this.inputElement.addEventListener('click', () => this.toggleDropdown());
+        this.searchElement.addEventListener('input', (e) => this.filterOptions(e.target.value));
+        document.addEventListener('click', (e) => this.handleClickOutside(e));
+      }
+
+      renderOptions(optionsToRender) {
+        this.dropdownElement.innerHTML = '';
+        if (optionsToRender.length === 0) {
+          const noResults = document.createElement('div');
+          noResults.className = 'searchable-select-option no-results';
+          noResults.textContent = 'Nenhuma opção encontrada';
+          this.dropdownElement.appendChild(noResults);
+          return;
+        }
+        optionsToRender.forEach(option => {
+          const el = document.createElement('div');
+          el.className = 'searchable-select-option';
+          el.textContent = option;
+          el.addEventListener('click', () => this.selectOption(option));
+          this.dropdownElement.appendChild(el);
+        });
+      }
+
+      toggleDropdown() {
+        const isActive = this.inputElement.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) {
+          this.inputElement.classList.add('active');
+          this.dropdownElement.classList.add('active');
+          this.searchElement.style.display = 'block';
+          this.searchElement.focus();
+          this.searchElement.value = '';
+          this.renderOptions(this.options);
+        }
+      }
+
+      filterOptions(searchTerm) {
+        const filtered = this.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+        this.renderOptions(filtered);
+      }
+
+      selectOption(option) {
+        this.selectedValue = option;
+        this.hiddenInput.value = option;
+        this.inputElement.querySelector('span').textContent = option;
+        closeAllDropdowns();
+        this.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      handleClickOutside(e) {
+        if (!e.target.closest('.searchable-select-wrapper')) {
+          closeAllDropdowns();
+        }
+      }
+    }
+
+    // ==================== DYNAMIC CITY SELECT ====================
+
+    class DynamicCitySearchableSelect {
+      constructor(containerId, hiddenInputId, cities) {
+        this.container = document.getElementById(containerId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.cities = cities;
+        this.cityMap = {};
+        this.selectedValue = null;
+        this.init();
+      }
+
+      init() {
+        this.container.innerHTML = '';
+        this.wrapper = document.createElement('div');
+        this.wrapper.className = 'searchable-select-wrapper';
+
+        this.inputElement = document.createElement('div');
+        this.inputElement.className = 'searchable-select-input';
+        this.inputElement.innerHTML = `<span>Selecionar cidade</span><div class="dropdown-arrow"></div>`;
+
+        this.searchElement = document.createElement('input');
+        this.searchElement.type = 'text';
+        this.searchElement.className = 'search-input-field';
+        this.searchElement.placeholder = 'Digite para buscar...';
+        this.searchElement.style.display = 'none';
+
+        this.dropdownElement = document.createElement('div');
+        this.dropdownElement.className = 'searchable-select-dropdown';
+
+        this.wrapper.appendChild(this.inputElement);
+        this.wrapper.appendChild(this.searchElement);
+        this.wrapper.appendChild(this.dropdownElement);
+        this.container.appendChild(this.wrapper);
+
+        this.renderOptions(this.cities);
+
+        this.inputElement.addEventListener('click', () => this.toggleDropdown());
+        this.searchElement.addEventListener('input', (e) => this.filterOptions(e.target.value));
+        document.addEventListener('click', (e) => this.handleClickOutside(e));
+      }
+
+      renderOptions(list) {
+        this.dropdownElement.innerHTML = '';
+        if (list.length === 0) {
+          const el = document.createElement('div');
+          el.className = 'searchable-select-option no-results';
+          el.textContent = 'Nenhuma opção encontrada';
+          this.dropdownElement.appendChild(el);
+          return;
+        }
+        list.forEach(city => {
+          const el = document.createElement('div');
+          el.className = 'searchable-select-option';
+          el.textContent = city;
+          el.addEventListener('click', () => this.selectOption(city));
+          this.dropdownElement.appendChild(el);
+        });
+      }
+
+      toggleDropdown() {
+        const isActive = this.inputElement.classList.contains('active');
+        closeAllDropdowns();
+        if (!isActive) {
+          this.inputElement.classList.add('active');
+          this.dropdownElement.classList.add('active');
+          this.searchElement.style.display = 'block';
+          this.searchElement.focus();
+          this.searchElement.value = '';
+          this.renderOptions(this.cities);
+        }
+      }
+
+      filterOptions(term) {
+        const filtered = this.cities.filter(c => c.toLowerCase().includes(term.toLowerCase()));
+        this.renderOptions(filtered);
+      }
+
+      selectOption(city) {
+        this.selectedValue = this.cityMap[city] || city;
+        this.hiddenInput.value = this.selectedValue;
+        this.inputElement.querySelector('span').textContent = city;
+        closeAllDropdowns();
+        this.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        updatePreview();
+      }
+
+      handleClickOutside(e) {
+        if (!e.target.closest('.searchable-select-wrapper')) {
+          closeAllDropdowns();
+        }
+      }
+
+      setCityMap(map) {
+        this.cityMap = map;
+      }
+    }
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.searchable-select-input').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.searchable-select-dropdown').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.search-input-field').forEach(el => el.style.display = 'none');
+    }
+
+    // ==================== INICIALIZAÇÃO ====================
+
+    const estadoSelect = new SearchableSelect(
+      'estadoInput', 'estadoSearch', 'estadoDropdown', 'estado', estados
+    );
+
+    let currentCitySelector = null;
+
+    function createCitySelector(stateValue) {
+      if (stateValue && estadosCidades[stateValue]) {
+        const cidades = estadosCidades[stateValue];
+        const sorted = Object.keys(cidades).sort((a, b) => a.localeCompare(b));
+        currentCitySelector = new DynamicCitySearchableSelect('cidadeContainer', 'cidade', sorted);
+        currentCitySelector.setCityMap(cidades);
+      }
+    }
+
+    document.getElementById('estado').addEventListener('change', function () {
+      document.getElementById('cidade').value = '';
+      createCitySelector(this.value);
+      updatePreview();
+    });
+
+    // Atualizar pré-visualização ao vivo
+    function updatePreview() {
+      const nomeEvento = normalizarTexto(document.getElementById('nomeEvento').value || '');
+      const cidade = document.getElementById('cidade').value || '';
+      const estado = document.getElementById('estado').value || '';
+      const ano = document.getElementById('ano').value || '';
+
+      const preview = document.getElementById('preview');
+
+      if (!nomeEvento && !cidade && !estado && !ano) {
+        preview.style.color = 'var(--text-secondary)';
+        preview.style.fontStyle = 'italic';
+        preview.textContent = 'Preencha os campos para visualizar o padrão...';
+        return;
+      }
+
+      const parts = ['EVENTO', nomeEvento || '___', cidade || '___', estado || '___', ano || '____'];
+      preview.style.color = 'var(--text-primary)';
+      preview.style.fontStyle = 'normal';
+      preview.textContent = parts.join('-');
+    }
+
+    document.getElementById('nomeEvento').addEventListener('input', updatePreview);
+    document.getElementById('ano').addEventListener('input', updatePreview);
+
+    // ==================== SUBMIT ====================
+
+    document.getElementById("form").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const nomeEventoRaw = document.getElementById('nomeEvento').value.trim();
+      const estado = document.getElementById('estado').value;
+      const cidadeCodigo = document.getElementById('cidade').value;
+      const ano = document.getElementById('ano').value;
+
+      if (!nomeEventoRaw || !estado || !cidadeCodigo || !ano) {
+        showNotification("Por favor, preencha todos os campos obrigatórios.", "error");
+        return;
+      }
+
+      const nomeEvento = normalizarTexto(nomeEventoRaw);
+      const projeto = `EVENTO-${nomeEvento}-${cidadeCodigo}-${estado}-${ano}`;
+
+      document.getElementById('projetoEvento').textContent = projeto;
+      document.getElementById("popup").style.display = "flex";
+    });
+
+    document.getElementById("copyProjetoEvento").addEventListener("click", function () {
+      const val = document.getElementById('projetoEvento').textContent;
+      navigator.clipboard.writeText(val).then(() => {
+        showNotification("Projeto copiado com sucesso!", "success");
+      }).catch(() => {
+        showNotification("Erro ao copiar o projeto.", "error");
+      });
+    });
+
+    document.getElementById("closePopup").addEventListener("click", function () {
+      document.getElementById("popup").style.display = "none";
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        document.getElementById("popup").style.display = "none";
+      }
+    });
+
+    // ==================== TEMA ====================
+
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || null;
+
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      if (currentTheme === 'dark') themeToggle.textContent = '☀️';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      let theme = document.documentElement.getAttribute('data-theme');
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '☀️';
+      }
+      updateAccentColorRGB();
+    });
+
+    function updateAccentColorRGB() {
+      const root = document.documentElement;
+      const accentColor = getComputedStyle(root).getPropertyValue('--accent-color').trim();
+      if (accentColor.startsWith('#')) {
+        const r = parseInt(accentColor.substring(1, 3), 16);
+        const g = parseInt(accentColor.substring(3, 5), 16);
+        const b = parseInt(accentColor.substring(5, 7), 16);
+        root.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+      }
+    }
+
+    updateAccentColorRGB();
+  </script>
+</body>
+</html>

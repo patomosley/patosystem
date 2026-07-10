@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PATO SO - Login</title>
+  <link rel="shortcut icon" href="favicon/pato.png" type="image/x-icon">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --error-color: #d9363e;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px var(--shadow-color);
+      padding: 32px 28px;
+    }
+
+    .login-card img {
+      display: block;
+      width: 56px;
+      margin: 0 auto 12px auto;
+    }
+
+    .login-card h1 {
+      font-size: 18px;
+      text-align: center;
+      margin: 0 0 4px 0;
+    }
+
+    .login-card p.subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin: 0 0 24px 0;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    button.submit-btn {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent-color);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button.submit-btn:hover { background: var(--accent-hover); }
+    button.submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+    .error-msg {
+      display: none;
+      background: #fdecea;
+      color: var(--error-color);
+      border: 1px solid #f5c2c0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <img src="favicon/pato.png" alt="PATO SO">
+    <h1>PATO SO</h1>
+    <p class="subtitle">Entre com seu usuário para acessar o sistema</p>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">Entrar</button>
+    </form>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
+    const SUPABASE_ANON_KEY = "SUA-CHAVE-ANON-AQUI";
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const form = document.getElementById("loginForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const submitBtn = document.getElementById("submitBtn");
+
+    function getNextUrl() {
+      const params = new URLSearchParams(location.search);
+      const next = params.get("next");
+      return next && next.startsWith("/") ? next : "/index.html";
+    }
+
+    // se já estiver logado, manda direto pra dentro
+    client.auth.getSession().then(({ data: { session } }) => {
+      if (session) location.href = getNextUrl();
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = "none";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Entrando...";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      const { error } = await client.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errorMsg.textContent = "E-mail ou senha inválidos.";
+        errorMsg.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Entrar";
+        return;
+      }
+
+      location.href = getNextUrl();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>PATO SO</title>
+  <link rel="shortcut icon" href="favicon/pato.png" type="image/x-icon">
+  <link rel="stylesheet" href="css/styles.css">
+  <style> </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <!-- Sidebar content remains the same -->
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">sistemas-revan</h3>
+    <div class="submenu">
+      <a href="https://novorevan.brisanet.net.br/" target="_blank">revan</a>
+      <a href="https://revan-atendimento.brisanet.net.br/" target="_blank">yoda</a>
+      <a href="https://estoque.brisanet.net.br/" target="_blank">estoque</a>
+	  <a href="https://revan-fttx.brisanet.net.br" target="_blank">revan-fttx</a>
+      <a href="https://revan-estoque.brisanet.net.br/supplychain/" target="_blank">supplychain</a>
+    </div>
+  </div>
+
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">suporte-monitoramento</h3>
+    <div class="submenu">
+      <a href="https://saski.brisanet.net.br" target="_blank">saski</a>
+      <a href="https://netboxcop.brisanet.net.br" target="_blank">netbox (VPN)</a>
+      <a href="https://librenms.brisanet.net.br" target="_blank">librenms (VPN)</a>
+      <a href="https://zabbix-corp.brisanet.net.br" target="_blank">zabbix</a>
+	  <a href="https://libre-portalcorp-01.brisanet.net.br" target="_blank">monitoramento-librenms</a>
+	  
+    </div>
+  </div>
+
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">sistema-consulta</h3>
+    <div class="submenu">
+      <a href="/whois/whois.html">whois</a>
+      <a href="/ip-calc/ip-calc.html">ip-calc</a>
+      <a href="/mac-vendor/mac-vendor.html">mac-vendor</a>
+	  <a href="/mkscript/index.html" target="_self">mikrotik-scripts</a>
+    </div>
+  </div>
+
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">solicitações-material</h3>
+    <div class="submenu">
+      <a href="/material-centralizado/material-centralizado.html">material-centralizado</a>
+      <a href="/sistema_solicitacao_material/sistema_solicitacao_material.html">material-tiflux</a>
+    </div>
+  </div>
+
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">sdwan-fortinete</h3>
+    <div class="submenu">
+      <a href="/sdwan/index.html">solicitaçãoe-e-transferencia-sdwan</a>
+    </div>
+  </div>
+
+  <div class="menu-category">
+    <h3 onclick="toggleMenu(this)">solicitação-sap</h3>
+    <div class="submenu">
+	  <a href="/chamados_sap/criar_evento.html">criar-diagrama-evento</a>
+      <a href="/chamados_sap/criar_sap.html">criar-diagrama</a>
+      <a href="/chamados_sap/sap_jira.html">abrir-chamado-jira</a>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <button class="theme-toggle" id="themeToggle">🌙</button>
+  <h1>PATO SO - PADROES PARA CHAMADOS SASKI</h1>
+
+  <div class="form-group">
+    <label for="cliente">Nome do Cliente:</label>
+    <input type="text" id="cliente">
+  </div>
+
+  <div class="form-group">
+    <label for="codigo">Código de Contrato:</label>
+    <input type="text" id="codigo">
+  </div>
+
+  <div class="form-group">
+    <label for="setor">Setor:</label>
+      <select id="setor" onchange="atualizarTipos()">
+          <option value="">Selecionar Opção</option>
+          <option value="GPON">GPON</option>
+          <option value="MONITORAMENTO SUPORTE">MONITORAMENTO SUPORTE</option>
+          <option value="NOC-ENGENHARIA">NOC-ENGENHARIA</option>
+          <option value="NOC-OM">NOC-OM</option>
+          <option value="NOC-SO">NOC-SO</option>
+          <option value="TELEFONIA">TELEFONIA</option>
+      </select>
+  </div>
+
+  <div class="form-group">
+    <label for="tipo">Tipo de Solicitação:</label>
+    <select id="tipo">
+      <option value="">Selecionar Opção</option>
+    </select>
+  </div>
+
+  <div class="buttons-container">
+    <button onclick="gerarChamado()">Gerar Chamado</button>
+    <button class="secondary" onclick="limparFormulario()">Limpar</button>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3>
+      Título
+      <button class="copy-button" onclick="copiarTitulo()" title="Copiar Título">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </h3>
+    <p id="titulo"></p>
+
+    <h3>
+      Descrição
+      <button class="copy-button" onclick="copiarDescricao()" title="Copiar Descrição">
+         <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </h3>
+    <pre id="descricao"></pre>
+
+    <div class="modal-buttons">
+      <!-- Removed the combined copy button -->
+      <button class="secondary" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+<div class="alert-popup" id="alertPopup"></div>
+
+<script src="js/script.js"> </script>
+
+</body>
+	<!---
+	                                                  
+                                                  
+                                                  
+                                                  
+                            ########              
+                          ######  ####            
+                          ######  ############    
+                          ##################      
+                            ########              
+                            ######                
+                            ######                
+                            ######                
+                            ########              
+                          ############            
+                        ##############            
+                      ##################          
+          ##############################          
+        ################################          
+        ################################          
+          ############################            
+                ####################              
+                    ####                          
+                    ########                      
+                                                  
+                                                  
+	--->
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>PATO SO - IP-Calc</title>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg-primary);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      padding: 30px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: var(--bg-secondary);
+      transform: translateY(-2px);
+    }
+
+    .back-button svg {
+      margin-right: 6px;
+      width: 16px;
+      height: 16px;
+      fill: var(--text-primary);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* Resultado */
+    .result-container {
+      margin-top: 30px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      display: none;
+      border: 1px solid var(--border-color);
+    }
+
+    .result-container.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-secondary);
+    }
+
+    .result-item {
+      margin-bottom: 15px;
+    }
+
+    .result-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .result-value {
+      font-size: 15px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      word-break: break-all;
+    }
+
+    .notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      animation: fadeNotificationInOut 3s forwards;
+      font-size: 14px;
+    }
+    
+    @keyframes fadeNotificationInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <a href="javascript:history.back()" class="back-button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Voltar
+    </a>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+  </div>
+  
+  <h1>PATO SO - IP CALC</h1>
+
+  <div class="form-group">
+    <label for="ipAddress">Endereço IP:</label>
+    <input type="text" id="ipAddress" placeholder="Ex: 192.168.1.1">
+  </div>
+
+  <div class="form-group">
+    <label for="subnetMask">Máscara de Sub-rede:</label>
+    <select id="subnetMask">
+      <option value="32">255.255.255.255 (/32)</option>
+      <option value="31">255.255.255.254 (/31)</option>
+      <option value="30">255.255.255.252 (/30)</option>
+      <option value="29">255.255.255.248 (/29)</option>
+      <option value="28">255.255.255.240 (/28)</option>
+      <option value="27">255.255.255.224 (/27)</option>
+      <option value="26">255.255.255.192 (/26)</option>
+      <option value="25">255.255.255.128 (/25)</option>
+      <option value="24" selected>255.255.255.0 (/24)</option>
+      <option value="23">255.255.254.0 (/23)</option>
+      <option value="22">255.255.252.0 (/22)</option>
+      <option value="21">255.255.248.0 (/21)</option>
+      <option value="20">255.255.240.0 (/20)</option>
+      <option value="19">255.255.224.0 (/19)</option>
+      <option value="18">255.255.192.0 (/18)</option>
+      <option value="17">255.255.128.0 (/17)</option>
+      <option value="16">255.255.0.0 (/16)</option>
+      <option value="15">255.254.0.0 (/15)</option>
+      <option value="14">255.252.0.0 (/14)</option>
+      <option value="13">255.248.0.0 (/13)</option>
+      <option value="12">255.240.0.0 (/12)</option>
+      <option value="11">255.224.0.0 (/11)</option>
+      <option value="10">255.192.0.0 (/10)</option>
+      <option value="9">255.128.0.0 (/9)</option>
+      <option value="8">255.0.0.0 (/8)</option>
+      <option value="7">254.0.0.0 (/7)</option>
+      <option value="6">252.0.0.0 (/6)</option>
+      <option value="5">248.0.0.0 (/5)</option>
+      <option value="4">240.0.0.0 (/4)</option>
+      <option value="3">224.0.0.0 (/3)</option>
+      <option value="2">192.0.0.0 (/2)</option>
+      <option value="1">128.0.0.0 (/1)</option>
+    </select>
+  </div>
+
+  <div class="buttons-container">
+    <button id="calculateButton" onclick="calcularRede()">Calcular Rede</button>
+    <button class="secondary" onclick="limparFormulario()">Limpar</button>
+  </div>
+
+  <div class="result-container" id="resultContainer">
+    <div class="result-header">
+      <h3 class="result-title">Resultado do Cálculo</h3>
+      <button class="copy-button" onclick="copiarResultado()" title="Copiar Resultado">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Endereço IP</div>
+      <div class="result-value" id="resultIP"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Máscara de Sub-rede</div>
+      <div class="result-value" id="resultMask"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Endereço de Rede</div>
+      <div class="result-value" id="resultNetwork"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Endereço de Broadcast</div>
+      <div class="result-value" id="resultBroadcast"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Primeiro Host Utilizável</div>
+      <div class="result-value" id="resultFirstHost"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Último Host Utilizável</div>
+      <div class="result-value" id="resultLastHost"></div>
+    </div>
+    
+    <div class="result-item">
+      <div class="result-label">Número de Hosts Utilizáveis</div>
+      <div class="result-value" id="resultHostsCount"></div>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+  // Alternar tema claro/escuro
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    this.textContent = newTheme === 'light' ? '🌙' : '☀️';
+  });
+
+  // Calcular rede
+  function calcularRede() {
+    const ipInput = document.getElementById('ipAddress').value.trim();
+    const cidrSelect = document.getElementById('subnetMask');
+    const cidr = parseInt(cidrSelect.value);
+    const calculateButton = document.getElementById('calculateButton');
+    
+    if (!ipInput) {
+      mostrarNotificacao('Por favor, insira um endereço IP.');
+      return;
+    }
+    
+    // Validar formato do IP
+    if (!validarIP(ipInput)) {
+      mostrarNotificacao('Endereço IP inválido. Verifique e tente novamente.');
+      return;
+    }
+    
+    try {
+      // Desabilitar o botão e mostrar spinner durante o cálculo
+      const originalButtonText = calculateButton.innerHTML;
+      calculateButton.disabled = true;
+      calculateButton.innerHTML = '<span class="spinner"></span>Calculando...';
+      
+      // Converter IP para formato numérico
+      const ipDecimal = ipToDecimal(ipInput);
+      
+      // Calcular máscara em formato decimal
+      const maskDecimal = cidrToMaskDecimal(cidr);
+      
+      // Calcular endereço de rede
+      const networkDecimal = ipDecimal & maskDecimal;
+      
+      // Calcular endereço de broadcast
+      const broadcastDecimal = networkDecimal | (~maskDecimal >>> 0);
+      
+      // Calcular primeiro host utilizável
+      let firstHostDecimal = networkDecimal;
+      if (cidr < 31) {
+        firstHostDecimal = networkDecimal + 1;
+      }
+      
+      // Calcular último host utilizável
+      let lastHostDecimal = broadcastDecimal;
+      if (cidr < 31) {
+        lastHostDecimal = broadcastDecimal - 1;
+      }
+      
+      // Calcular número de hosts utilizáveis
+      let hostsCount = Math.pow(2, 32 - cidr) - 2;
+      if (cidr >= 31) {
+        hostsCount = Math.pow(2, 32 - cidr);
+      }
+      
+      // Converter resultados para formato de string IP
+      const networkIP = decimalToIP(networkDecimal);
+      const broadcastIP = decimalToIP(broadcastDecimal);
+      const firstHostIP = decimalToIP(firstHostDecimal);
+      const lastHostIP = decimalToIP(lastHostDecimal);
+      const maskIP = decimalToIP(maskDecimal);
+      
+      // Exibir resultados
+      document.getElementById('resultIP').textContent = ipInput;
+      document.getElementById('resultMask').textContent = `${maskIP} (/${cidr})`;
+      document.getElementById('resultNetwork').textContent = networkIP;
+      document.getElementById('resultBroadcast').textContent = broadcastIP;
+      document.getElementById('resultFirstHost').textContent = firstHostIP;
+      document.getElementById('resultLastHost').textContent = lastHostIP;
+      document.getElementById('resultHostsCount').textContent = hostsCount.toLocaleString();
+      
+      // Mostrar container de resultados
+      document.getElementById('resultContainer').classList.add('active');
+      
+      // Restaurar o botão
+      calculateButton.disabled = false;
+      calculateButton.innerHTML = originalButtonText;
+    } catch (error) {
+      mostrarNotificacao(`Erro ao calcular: ${error.message}`);
+      calculateButton.disabled = false;
+      calculateButton.innerHTML = originalButtonText;
+    }
+  }
+
+  // Validar formato do IP
+  function validarIP(ip) {
+    const regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    if (!regex.test(ip)) return false;
+    
+    const octetos = ip.split('.');
+    for (let i = 0; i < 4; i++) {
+      const num = parseInt(octetos[i]);
+      if (num < 0 || num > 255) return false;
+    }
+    
+    return true;
+  }
+
+  // Converter IP para decimal
+  function ipToDecimal(ip) {
+    const octetos = ip.split('.');
+    return ((parseInt(octetos[0]) << 24) >>> 0) + 
+           ((parseInt(octetos[1]) << 16) >>> 0) + 
+           ((parseInt(octetos[2]) << 8) >>> 0) + 
+           parseInt(octetos[3]);
+  }
+
+  // Converter decimal para IP
+  function decimalToIP(decimal) {
+    return [
+      (decimal >>> 24) & 255,
+      (decimal >>> 16) & 255,
+      (decimal >>> 8) & 255,
+      decimal & 255
+    ].join('.');
+  }
+
+  // Converter CIDR para máscara decimal
+  function cidrToMaskDecimal(cidr) {
+    return cidr === 0 ? 0 : (((1 << 31) >>> 0) >> (cidr - 1));
+  }
+
+  // Limpar formulário
+  function limparFormulario() {
+    document.getElementById('ipAddress').value = '';
+    document.getElementById('subnetMask').value = '24';
+    document.getElementById('resultContainer').classList.remove('active');
+  }
+
+  // Copiar resultado
+  function copiarResultado() {
+    const ip = document.getElementById('resultIP').textContent;
+    const mask = document.getElementById('resultMask').textContent;
+    const network = document.getElementById('resultNetwork').textContent;
+    const broadcast = document.getElementById('resultBroadcast').textContent;
+    const firstHost = document.getElementById('resultFirstHost').textContent;
+    const lastHost = document.getElementById('resultLastHost').textContent;
+    const hostsCount = document.getElementById('resultHostsCount').textContent;
+    
+    const textoCopiado = 
+      `Endereço IP: ${ip}\n` +
+      `Máscara de Sub-rede: ${mask}\n` +
+      `Endereço de Rede: ${network}\n` +
+      `Endereço de Broadcast: ${broadcast}\n` +
+      `Primeiro Host Utilizável: ${firstHost}\n` +
+      `Último Host Utilizável: ${lastHost}\n` +
+      `Número de Hosts Utilizáveis: ${hostsCount}`;
+    
+    navigator.clipboard.writeText(textoCopiado)
+      .then(() => mostrarNotificacao('Resultado copiado para a área de transferência!'))
+      .catch(err => mostrarNotificacao('Erro ao copiar: ' + err));
+  }
+
+  // Mostrar notificação
+  function mostrarNotificacao(mensagem) {
+    const notification = document.getElementById('notification');
+    notification.textContent = mensagem;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 3000);
+  }
+
+  // Permitir pressionar Enter para calcular
+  document.getElementById('ipAddress').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      calcularRede();
+    }
+  });
+</script>
+
+</body>
+</html>
+

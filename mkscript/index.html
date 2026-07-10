@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+    <title>Gerador de Scripts MikroTik</title>
+    <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon">⚙️</div>
+                <div>
+                    <div class="brand-text">Script Generator</div>
+                    <div class="brand-sub">MikroTik Config</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn-action" onclick="window.open('../index.html')" title="Voltar">← Voltar</button>
+                <button class="btn-action theme-toggle" id="theme-toggle" title="Alternar tema">🌑</button>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">B2G</div>
+            <div class="menu-category">
+                <h3 class="menu-title">ETICE <span class="cat-arrow">▶</span></h3>
+                <div class="submenu">
+                    <a href="#" class="client-link" data-client="etice">ETICE</a>
+                    <a href="#" class="client-link" data-client="etice-eoip">ETICE-EOIP</a>
+                    <a href="#" class="client-link" data-client="ce-conectado">ETICE-CE CONECTADO</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Banda Larga</div>
+            <div class="menu-category">
+                <h3 class="menu-title">Configurações <span class="cat-arrow">▶</span></h3>
+                <div class="submenu">
+                    <a href="#" class="client-link" data-client="pppoe">PPPoE</a>
+                    <a href="#" class="client-link" data-client="ipd-dhpcp">IPD Direto c/ DHCP</a>
+                    <a href="#" class="client-link" data-client="ipd-roteado-dhcp">IPD Roteado c/ DHCP</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Links Dedicados</div>
+            <div class="menu-category">
+                <h3 class="menu-title">IPD <span class="cat-arrow">▶</span></h3>
+                <div class="submenu">
+                    <a href="#" class="client-link" data-client="ipd-direto">IPD Direto</a>
+                    <a href="#" class="client-link" data-client="ipd-roteado">IPD Roteado</a>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="content" id="content-area">
+        <div id="form-container">
+            <div class="welcome-state">
+                <div class="welcome-icon">⚙️</div>
+                <h1>Gerador de Scripts</h1>
+                <p>Selecione um tipo de configuração no menu lateral para gerar o script MikroTik automaticamente.</p>
+                <div class="tip">⚠ Interface padrão WAN: ether1 — altere se necessário após aplicar</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="script-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <div class="modal-header-icon">📄</div>
+                    <h3 id="modal-title">Script Gerado</h3>
+                </div>
+                <button class="close-button" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="script-output"></pre>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-copy-button" class="primary">📋 Copiar Script</button>
+                <button id="modal-close-button" class="secondary">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">✅ Copiado para a área de transferência!</div>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>

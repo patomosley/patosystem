@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <title>Padrao Solicitação Material Centralizado</title>
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --menu-hover: #f0f0f0;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+      --modal-bg: #ffffff;
+      --modal-overlay: rgba(0,0,0,0.5);
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --menu-hover: #2d2d2d;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+      --modal-bg: #1e1e1e;
+      --modal-overlay: rgba(0,0,0,0.7);
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .content {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      background: var(--bg-primary);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      margin: 20px auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      position: relative;
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .material-item {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    .material-item input {
+      flex: 1;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--menu-hover);
+    }
+
+    .btn-link {
+      background: transparent;
+      color: var(--accent-color);
+      text-decoration: none;
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-link:hover {
+      text-decoration: underline;
+      background: transparent;
+      transform: translateY(-2px);
+    }
+
+    .btn-link:before {
+      content: "←";
+      margin-right: 5px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(3px);
+      background: var(--modal-overlay);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--modal-bg);
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-content pre {
+      text-align: left;
+      background: var(--bg-secondary);
+      padding: 15px;
+      border-radius: 6px;
+      overflow: auto;
+      color: var(--text-primary);
+      font-family: monospace;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-secondary);
+    }
+
+    .notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      animation: fadeNotificationInOut 3s forwards;
+      font-size: 14px;
+    }
+    
+    .alert-popup {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      animation: fadeAlertInOut 3s forwards;
+      font-size: 14px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    @keyframes fadeNotificationInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    @keyframes fadeAlertInOut {
+      0% { opacity: 0; transform: translateY(-20px) translateX(-50%);}
+      10% { opacity: 1; transform: translateY(0) translateX(-50%);}
+      90% { opacity: 1; transform: translateY(0) translateX(-50%);}
+      100% { opacity: 0; transform: translateY(-20px) translateX(-50%);}
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .content {
+        padding: 20px;
+        margin: 10px;
+        width: calc(100% - 20px);
+      }
+      .modal-content {
+        width: 95%;
+      }
+      .buttons-container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="content">
+  <button class="theme-toggle" id="themeToggle">🌙</button>
+  <h1>PATO SO - Solicitação Material Centralizado</h1>
+
+  <div class="form-group">
+    <label for="projeto">PROJETO:</label>
+    <input type="text" id="projeto" placeholder="Nome do projeto">
+  </div>
+
+  <div class="form-group">
+    <label for="diagrama">DIAGRAMA:</label>
+    <input type="text" id="diagrama" placeholder="Código do diagrama">
+  </div>
+
+  <div id="materiais-container" class="form-group">
+    <label>MATERIAIS:</label>
+    <div class="material-item">
+      <input type="text" placeholder="Material" class="material">
+      <input type="number" placeholder="Qtd" class="quantidade" min="1" style="max-width: 100px;">
+    </div>
+  </div>
+
+  <div class="buttons-container">
+    <button class="secondary" onclick="addMaterial()">+ Adicionar Material</button>
+    <button onclick="gerarDescricao()">Gerar Descrição</button>
+    <button class="btn-link" onclick="voltarPagina()">Voltar à Página</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <h3>
+      Descrição Gerada
+      <button class="copy-button" onclick="copiarDescricao()" title="Copiar Descrição">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+      </button>
+    </h3>
+    <pre id="descricao"></pre>
+    <div class="modal-buttons">
+      <button class="secondary" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+<div class="alert-popup" id="alertPopup"></div>
+
+<script>
+  function addMaterial() {
+    const container = document.getElementById('materiais-container');
+    const div = document.createElement('div');
+    div.className = 'material-item';
+    div.innerHTML = `
+      <input type="text" placeholder="Material" class="material">
+      <input type="number" placeholder="Qtd" class="quantidade" min="1" style="max-width: 100px;">
+    `;
+    container.appendChild(div);
+  }
+
+  function gerarDescricao() {
+    const projeto = document.getElementById('projeto').value.trim();
+    const diagrama = document.getElementById('diagrama').value.trim();
+    const materiais = document.querySelectorAll('.material');
+    const quantidades = document.querySelectorAll('.quantidade');
+
+    if (!projeto || !diagrama) {
+      showAlert('Por favor, preencha os campos de Projeto e Diagrama.');
+      return;
+    }
+
+    let temMaterial = false;
+    materiais.forEach((mat, index) => {
+      if (mat.value.trim()) {
+        temMaterial = true;
+      }
+    });
+
+    if (!temMaterial) {
+      showAlert('Por favor, adicione pelo menos um material.');
+      return;
+    }
+
+    let descricao = `PROJETO: ${projeto}\nDIAGRAMA: ${diagrama}\n`;
+
+    materiais.forEach((mat, index) => {
+      const nome = mat.value.trim();
+      const qtd = quantidades[index].value.trim() || "1";
+      if (nome) {
+        descricao += `MATERIAIS: ${nome} / QUANTIDADE: ${qtd}\n`;
+      }
+    });
+
+    document.getElementById('descricao').textContent = descricao;
+    abrirModal();
+  }
+
+  function abrirModal() {
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function fecharModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+
+  function copiarDescricao() {
+    const descricao = document.getElementById('descricao').textContent;
+    copiarTextoParaClipboard(descricao, 'Descrição');
+  }
+
+  // Função para copiar texto para a área de transferência
+  async function copiarTextoParaClipboard(text, type) {
+    if (!navigator.clipboard) {
+      // Fallback para navegadores mais antigos
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; // Evita rolagem
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification(`${type} copiado com sucesso!`);
+      } catch (err) {
+        console.error('Fallback: Oops, não foi possível copiar', err);
+        showNotification(`Erro ao copiar ${type}.`);
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      showNotification(`${type} copiado com sucesso!`);
+    } catch (err) {
+      console.error('Erro ao copiar texto: ', err);
+      showNotification(`Erro ao copiar ${type}.`);
+    }
+  }
+
+  function voltarPagina() {
+    // Substitua pela URL desejada
+    window.location.href = "../index.html";
+  }
+
+  // Função para exibir notificação
+  function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.display = 'block';
+    // Oculta após a animação
+    setTimeout(() => {
+       if (notification.style.display === 'block') { // Check if still visible
+         notification.style.display = 'none';
+       }
+    }, 2900); // Um pouco antes do fim da animação
+  }
+  
+  // Função para exibir alerta
+  function showAlert(message) {
+    const alertPopup = document.getElementById('alertPopup');
+    alertPopup.textContent = message;
+    alertPopup.style.display = 'block';
+    // Oculta após a animação
+    setTimeout(() => {
+       if (alertPopup.style.display === 'block') { // Check if still visible
+         alertPopup.style.display = 'none';
+       }
+    }, 2900); // Um pouco antes do fim da animação
+  }
+
+  // Theme toggle
+  const themeToggle = document.getElementById('themeToggle');
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+
+  if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      if (currentTheme === 'dark') {
+          themeToggle.textContent = '☀️';
+      }
+  }
+
+  themeToggle.addEventListener('click', () => {
+      let theme = document.documentElement.getAttribute('data-theme');
+      if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          localStorage.setItem('theme', 'light');
+          themeToggle.textContent = '🌙';
+      } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+          themeToggle.textContent = '☀️';
+      }
+      // Update accent color RGB for box-shadow focus
+      updateAccentColorRGB(); 
+  });
+  
+  function updateAccentColorRGB() {
+      const root = document.documentElement;
+      const accentColor = getComputedStyle(root).getPropertyValue('--accent-color').trim();
+      // Basic conversion logic (assuming hex format #RRGGBB)
+      if (accentColor.startsWith('#')) {
+          const r = parseInt(accentColor.substring(1, 3), 16);
+          const g = parseInt(accentColor.substring(3, 5), 16);
+          const b = parseInt(accentColor.substring(5, 7), 16);
+          root.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+      }
+  }
+  
+  // Initial update
+  updateAccentColorRGB();
+
+  // Fechar modal com tecla ESC
+  document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") {
+      fecharModal();
+    }
+  });
+</script>
+
+</body>
+</html>

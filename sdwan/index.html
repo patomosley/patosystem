@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <title>Sistema SD-WAN - Solicitações</title>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <style>
+    * { 
+      box-sizing: border-box; 
+    }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --menu-hover: #f0f0f0;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+      --modal-bg: #ffffff;
+      --modal-overlay: rgba(0,0,0,0.5);
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --menu-hover: #2d2d2d;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+      --modal-bg: #1e1e1e;
+      --modal-overlay: rgba(0,0,0,0.7);
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .content {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      background: var(--bg-primary);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      margin: 20px auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      position: relative;
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 28px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    h2 {
+      color: var(--text-primary);
+      font-size: 20px;
+      margin-top: 25px;
+      margin-bottom: 15px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(255, 119, 0, 0.2);
+    }
+
+    .request-type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .request-type-card {
+      padding: 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      background: var(--bg-secondary);
+    }
+
+    .request-type-card:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px var(--shadow-color);
+    }
+
+    .request-type-card.selected {
+      border-color: var(--accent-color);
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .request-type-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .request-type-card p {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .form-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .form-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+    
+    button:disabled {
+      background: var(--text-secondary);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    button.secondary:hover {
+      background: var(--menu-hover);
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 0; 
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(3px);
+      background: var(--modal-overlay);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--modal-bg);
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .modal-header {
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--text-primary);
+    }
+
+    .result-item {
+      margin-bottom: 25px;
+    }
+
+    .result-item h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result-text {
+      text-align: left;
+      background: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 8px;
+      overflow: auto;
+      color: var(--text-primary);
+      font-family: 'Courier New', monospace;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .copy-button:hover {
+      opacity: 1;
+      background: var(--menu-hover);
+    }
+
+    .copy-button svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--text-secondary);
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--notification-bg);
+      color: var(--notification-text);
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: 500;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .notification.success {
+      background: #28a745;
+    }
+
+    .notification.error {
+      background: #dc3545;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .content {
+        padding: 20px;
+        margin: 10px;
+        width: calc(100% - 20px);
+      }
+      
+      .request-type-selector {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        width: 95%;
+        padding: 20px;
+      }
+      
+      .buttons-container {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <h1>Sistema SD-WAN - Solicitações</h1>
+
+    <form id="sdwanForm">
+      <h2>Tipo de Solicitação</h2>
+      <div class="request-type-selector">
+        <div class="request-type-card" data-type="configuracao">
+          <h3>SOLICITAÇÃO DE CONFIGURAÇÃO</h3>
+          <p>Envio para laboratório e configuração de equipamento</p>
+        </div>
+        <div class="request-type-card" data-type="transporte">
+          <h3>SOLICITAÇÃO DE TRANSPORTE</h3>
+          <p>Transporte de itens configurados para ativação</p>
+        </div>
+      </div>
+
+      <!-- Campos Comuns -->
+      <div id="commonFields" class="form-section">
+        <h2>Dados Básicos</h2>
+        
+        <div class="form-group">
+          <label for="clientName">Nome do Cliente:</label>
+          <input type="text" id="clientName" name="clientName" required>
+        </div>
+
+        <div class="form-group">
+          <label for="project">Projeto:</label>
+          <input type="text" id="project" name="project" required>
+        </div>
+
+        <div class="form-group">
+          <label for="city">Cidade:</label>
+          <input type="text" id="city" name="city" required>
+        </div>
+
+        <div class="form-group">
+          <label for="diagramMaterial">Diagrama material:</label>
+          <input type="text" id="diagramMaterial" name="diagramMaterial" required>
+        </div>
+
+        <div class="form-group">
+          <label for="diagramWork">Diagrama de mão de Obra:</label>
+          <input type="text" id="diagramWork" name="diagramWork" required>
+        </div>
+      </div>
+
+      <!-- Campos específicos para Configuração -->
+      <div id="configFields" class="form-section">
+        <h2>Dados da Configuração</h2>
+        
+        <div class="form-group">
+          <label for="equipment">Equipamento:</label>
+          <input type="text" id="equipment" name="equipment" required>
+        </div>
+
+        <div class="form-group">
+          <label for="howToDo">Como deve ser feito:</label>
+          <textarea id="howToDo" name="howToDo" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="licenseType">Tipo de licença:</label>
+          <select id="licenseType" name="licenseType" required>
+            <option value="">Selecione o tipo de licença</option>
+            <option value="Básica">Licença Básica</option>
+            <option value="Avançada">Licença Avançada</option>
+            <option value="Premium">Licença Premium</option>
+            <option value="Enterprise">Licença Enterprise</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campos específicos para Transporte -->
+      <div id="transportFields" class="form-section">
+        <h2>Dados do Transporte</h2>
+        
+        <div class="form-group">
+          <label for="configTicket">Ticket referente à configuração laboratorial:</label>
+          <input type="text" id="configTicket" name="configTicket" required>
+        </div>
+
+        <div class="form-group">
+          <label for="additionalItems">Itens adicionais no transporte:</label>
+          <textarea id="additionalItems" name="additionalItems" placeholder="Descreva os itens adicionais que devem ser transportados"></textarea>
+        </div>
+      </div>
+
+      <div class="buttons-container">
+        <button type="submit" id="generateBtn" disabled>Gerar Solicitação</button>
+        <button type="button" class="secondary" onclick="resetForm()">Limpar Formulário</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Solicitação Gerada</h2>
+      </div>
+      <div class="result-item">
+        <h3>
+          Título da Solicitação
+          <button class="copy-button" onclick="copyText('titleText')" title="Copiar Título">
+            <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+              <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+            </svg>
+          </button>
+        </h3>
+        <div class="result-text" id="titleText"></div>
+      </div>
+      <div class="result-item">
+        <h3>
+          Descrição da Solicitação
+          <button class="copy-button" onclick="copyText('descriptionText')" title="Copiar Descrição">
+            <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+              <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+            </svg>
+          </button>
+        </h3>
+        <div class="result-text" id="descriptionText"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal()">Fechar</button>
+        <button onclick="generateNew()">Nova Solicitação</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-guard.js"></script>
+  <style>html{visibility:hidden}</style>
+  <link rel="shortcut icon" href="../favicon/pato.png" type="image/x-icon">
+  <title>Sistema de Geração de Padrões para Chamados</title>
+  <style>
+    * { box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --accent-color: #ff7700;
+      --accent-hover: #ff9933;
+      --menu-hover: #f0f0f0;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --input-border: #dddddd;
+      --shadow-color: rgba(0,0,0,0.1);
+      --notification-bg: #ff7700;
+      --notification-text: #ffffff;
+      --modal-bg: #ffffff;
+      --modal-overlay: rgba(0,0,0,0.5);
+      --success-color: #2ecc71;
+      --success-hover: #27ae60;
+      --error-color: #e74c3c;
+      --error-hover: #c0392b;
+      --secondary-color: #95a5a6;
+      --secondary-hover: #7f8c8d;
+      --purple-color: #9b59b6;
+      --purple-hover: #8e44ad;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #aaaaaa;
+      --accent-color: #7e57c2;
+      --accent-hover: #9575cd;
+      --menu-hover: #2d2d2d;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --shadow-color: rgba(0,0,0,0.3);
+      --notification-bg: #7e57c2;
+      --notification-text: #ffffff;
+      --modal-bg: #1e1e1e;
+      --modal-overlay: rgba(0,0,0,0.7);
+      --success-color: #2ecc71;
+      --success-hover: #27ae60;
+      --error-color: #e74c3c;
+      --error-hover: #c0392b;
+      --secondary-color: #607d8b;
+      --secondary-hover: #546e7a;
+      --purple-color: #9b59b6;
+      --purple-hover: #8e44ad;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+      width: auto;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .back-button {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: var(--secondary-color);
+      border: none;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      z-index: 5;
+      width: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .back-button:hover {
+      background: var(--secondary-hover);
+      transform: translateY(-2px);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      padding: 30px;
+      background: var(--bg-primary);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      margin: 60px auto 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      position: relative;
+    }
+
+    h1 { 
+      color: var(--text-primary); 
+      font-size: 24px;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    h1:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    h3 {
+      color: var(--text-primary);
+      font-size: 18px;
+      margin-bottom: 15px;
+      margin-top: 25px;
+    }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      position: relative;
+    }
+
+    label { 
+      font-weight: 500; 
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    /* Searchable Select Styles */
+    .searchable-select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .searchable-select-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .searchable-select-input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .searchable-select-input.active {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-color: var(--accent-color);
+    }
+
+    .search-input-field {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .search-input-field:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb, 255, 119, 0), 0.2);
+    }
+
+    .searchable-select-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-primary);
+      border: 1px solid var(--input-border);
+      border-top: none;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    .searchable-select-dropdown.active {
+      display: block;
+    }
+
+    .searchable-select-option {
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    .searchable-select-option:hover {
+      background: var(--menu-hover);
+      color: var(--accent-color);
+    }
+
+    .searchable-select-option.selected {
+      background: var(--accent-color);
+      color: white;
+      font-weight: 600;
+    }
+
+    .searchable-select-option.no-results {
+      padding: 12px 14px;
+      text-align: center;
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    .searchable-select-option.no-results:hover {
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+    }
+
+    .dropdown-arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--text-secondary);
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+
+    .searchable-select-input.active .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .flex-container {
+      display: flex;
+      gap: 15px;
+    }
+
+    .flex-container .form-group {
+      flex: 1;
+    }
+
+    .section-divider {
+      margin: 30px 0 20px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 10px;
+    }
+
+    .child-config {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .child-inputs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .child-inputs input, .child-inputs select {
+      flex: 1;
+    }
+
+    .child-count {
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 12px 16px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    button:hover { 
+      background: var(--accent-hover); 
+      transform: translateY(-2px);
+    }
+    
+    button.secondary {
+      background: var(--secondary-color);
+      width: auto;
+    }
+    
+    button.secondary:hover {
+      background: var(--secondary-hover);
+    }
+
+    button.success {
+      background: var(--success-color);
+      width: auto;
+    }
+    
+    button.success:hover {
+      background: var(--success-hover);
+    }
+
+    button.purple {
+      background: var(--purple-color);
+    }
+    
+    button.purple:hover {
+      background: var(--purple-hover);
+    }
+
+    /* Modal (Popup) Styles */
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(3px);
+      background: var(--modal-overlay);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .popup-content {
+      background: var(--modal-bg);
+      padding: 25px 30px;
+      border-radius: 12px;
+      max-width: 700px;
+      width: 95%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px var(--shadow-color);
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .popup-header h2 {
+      color: var(--text-primary);
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      width: auto;
+      padding: 0;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+    .close-btn:hover {
+      color: var(--error-color);
+    }
+
+    .project-container {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .project-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .project-value {
+      word-break: break-word;
+      padding: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      color: var(--text-primary);
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .copy-btn {
+      background-color: transparent;
+      color: var(--text-secondary);
+      border: none;
+      padding: 5px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      opacity: 0.7;
+      transition: all 0.3s ease;
+    }
+
+    .copy-btn:hover {
+      background-color: var(--menu-hover);
+      color: var(--accent-color);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .copy-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      margin: 0;
+    }
+
+    .copy-all-btn {
+      background-color: var(--purple-color);
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px 16px;
+    }
+
+    .copy-all-btn:hover {
+      background-color: var(--purple-hover);
+      transform: translateY(-2px);
+    }
+
+    .child-projects-container {
+      margin-top: 20px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    .child-project-item {
+      margin-bottom: 15px;
+      padding: 15px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      z-index: 200;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .success {
+      background-color: var(--success-color);
+    }
+
+    .error {
+      background-color: var(--error-color);
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+        margin: 70px 10px 10px;
+        width: calc(100% - 20px);
+      }
+      .flex-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .child-inputs {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .popup-content {
+        width: 95%;
+        padding: 20px;
+      }
+      .back-button {
+        top: 10px;
+        left: 10px;
+      }
+      .theme-toggle {
+        top: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-button" onclick="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    Voltar
+  </button>
+  <button class="theme-toggle" id="themeToggle">🌙</button>
+  
+  <div class="container">
+    <h1>PATO SO - CRIAÇÃO DE DIAGRAMAS</h1>
+    
+    <form id="form">
+      <h3>Dados do Projeto Pai</h3>
+      <div class="form-group">
+        <label for="categoria">CATEGORIA:</label>
+        <div class="searchable-select-wrapper">
+          <div class="searchable-select-input" id="categoriaInput">
+            <span id="categoriaText">Selecionar opção</span>
+            <div class="dropdown-arrow"></div>
+          </div>
+          <input type="text" class="search-input-field" id="categoriaSearch" placeholder="Digite para buscar..." style="display: none;">
+          <div class="searchable-select-dropdown" id="categoriaDropdown"></div>
+          <input type="hidden" id="categoria" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="servico">SERVIÇO:</label>
+        <div class="searchable-select-wrapper">
+          <div class="searchable-select-input" id="servicoInput">
+            <span id="servicoText">Selecionar opção</span>
+            <div class="dropdown-arrow"></div>
+          </div>
+          <input type="text" class="search-input-field" id="servicoSearch" placeholder="Digite para buscar..." style="display: none;">
+          <div class="searchable-select-dropdown" id="servicoDropdown"></div>
+          <input type="hidden" id="servico" required>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="cnpj">NÚMERO CNPJ:</label>
+        <input type="text" id="cnpj" placeholder="XX.XXX.XXX/XXXX-XX" maxlength="18" required>
+      </div>
+      
+      <div class="flex-container">
+        <div class="form-group">
+          <label for="estado">ESTADO:</label>
+          <div class="searchable-select-wrapper">
+            <div class="searchable-select-input" id="estadoInput">
+              <span id="estadoText">Selecionar opção</span>
+              <div class="dropdown-arrow"></div>
+            </div>
+            <input type="text" class="search-input-field" id="estadoSearch" placeholder="Digite para buscar..." style="display: none;">
+            <div class="searchable-select-dropdown" id="estadoDropdown"></div>
+            <input type="hidden" id="estado" required>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="empresa">EMPRESA:</label>
+        <div class="searchable-select-wrapper">
+          <div class="searchable-select-input" id="empresaInput">
+            <span id="empresaText">Selecionar opção</span>
+            <div class="dropdown-arrow"></div>
+          </div>
+          <input type="text" class="search-input-field" id="empresaSearch" placeholder="Digite para buscar..." style="display: none;">
+          <div class="searchable-select-dropdown" id="empresaDropdown"></div>
+          <input type="hidden" id="empresa" required>
+        </div>
+      </div>
+      
+      <div class="section-divider"></div>
+      
+      <div class="child-config">
+        <h3>Configuração dos Projetos Filhos</h3>
+        <div class="form-group child-count">
+          <label for="quantidadeFilhos">QUANTIDADE DE PROJETOS FILHOS:</label>
+          <input type="number" id="quantidadeFilhos" min="1" value="1" required>
+        </div>
+        
+        <div id="childProjectsConfig">
+          <!-- Campos para configuração dos projetos filhos serão gerados dinamicamente -->
+        </div>
+      </div>
+      
+      <button type="submit">Gerar Padrões</button>
+    </form>
+    
+    <div id="notification" class="notification"></div>
+  </div>
+  
+  <div id="popup" class="popup">
+    <div class="popup-content">
+      <div class="popup-header">
+        <h2>Padrões Gerados</h2>
+        <button id="closePopup" class="close-btn" title="Fechar">&times;</button>
+      </div>
+      
+      <div class="project-container">
+        <div class="project-label">PROJETO PAI:</div>
+        <div id="projetoPai" class="project-value"></div>
+        <button id="copyProjetoPai" class="copy-btn" title="Copiar Projeto Pai">
+          <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+            <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="child-projects-container" id="childProjectsContainer">
+        <!-- Projetos filhos serão inseridos aqui -->
+      </div>
+      
+      <button id="copyAllProjects" class="copy-all-btn">
+        <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg" style="width:16px; height:16px; margin-right: 8px;">
+          <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+        </svg>
+        Copiar Todos os Projetos
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    // Função para voltar à página anterior
+    function goBack() {
+      window.history.back();
+    }
+
+    // Função para exibir notificações
+    function showNotification(message, type) {
+      const notification = document.getElementById("notification");
+      notification.textContent = message;
+      notification.className = "notification " + type;
+      notification.style.display = "block";
+      notification.classList.add("show");
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => {
+          notification.style.display = "none";
+        }, 300);
+      }, 3000);
+    }
+
+    // Dicionários de estados, cidades e empresas
+    const estadosCidades = {
+      CE: {
+        "AQUIRAZ": "AQZ",
+        "BEBERIBE": "BBB",
+        "CASCAVEL": "CVL",
+        "CAUCAIA": "CUC",
+        "CHOROZINHO": "CZH",
+        "EUSEBIO": "ESB",
+        "FORTALEZA": "FLA",
+        "GUAIUBA": "GBA",
+        "HORIZONTE": "HZT",
+        "ITAITINGA": "IAG",
+        "MARACANAU": "MCW",
+        "MARANGUAPE": "MUE",
+        "PACAJUS": "PJS",
+        "PACATUBA": "PUB",
+        "PINDORETAMA": "PDJ",
+        "SAO GONCALO DO AMARANTE": "SGA",
+        "ACARAPE": "ACP",
+        "APUIARES": "AUS",
+        "ARACOIABA": "AAA",
+        "ARATUBA": "ATU",
+        "BARREIRA": "BRK",
+        "BATURITE": "BTT",
+        "CANINDE": "CIE",
+        "CAPISTRANO": "CSR",
+        "CARIDADE": "CID",
+        "GENERAL SAMPAIO": "GNL",
+        "GUARAMIRANGA": "GAG",
+        "MULUNGU": "MUN",
+        "OCARA": "OCR",
+        "PACOTI": "PTY",
+        "PALMACIA": "PMC",
+        "PARAMOTI": "POY",
+        "REDENCAO": "RDC",
+        "ITAPAGE": "IGE",
+        "PARACURU": "PUU",
+        "PARAIPABA": "PBP",
+        "PENTECOSTE": "POE",
+        "SAO LUIS DO CURU": "SRU",
+        "TEJUCUOCA": "TJU",
+        "TRAIRI": "TRY",
+        "TURURU": "TUK",
+        "UMIRIM": "URM",
+        "URUBURETAMA": "UUA",
+        "ALTO SANTO": "ATO",
+        "ARACATI": "ACA",
+        "FORTIM": "FORT",
+        "IBICUITINGA": "ICN",
+        "ICAPUI": "ICP",
+        "IRACEMA": "ICA",
+        "ITAICABA": "IAX",
+        "JAGUARUANA": "JGN",
+        "LIMOEIRO DO NORTE": "LNT",
+        "MORADA NOVA": "MVA",
+        "PALHANO": "PHN",
+        "POTIRETAMA": "PTZ",
+        "QUIXERE": "QXE",
+        "RUSSAS": "RUS",
+        "SAO JOAO DO JAGUARIBE": "SUB",
+        "TABULEIRO DO NORTE": "TNT",
+        "ABAIARA": "ABY",
+        "AURORA": "AUR",
+        "BARBALHA": "BBH",
+        "BARRO": "BAO",
+        "BREJO SANTO": "BJS",
+        "CARIRIACU": "CAC",
+        "CRATO": "CTO",
+        "GRANJEIRO": "GJO",
+        "JARDIM": "JDM",
+        "JATI": "JAT",
+        "JUAZEIRO DO NORTE": "JNE",
+        "MAURITI": "MRT",
+        "MILAGRES": "MGS",
+        "MISSAO VELHA": "MAH",
+        "PENAFORTE": "PFT",
+        "PORTEIRAS": "PTX",
+        "VARZEA ALEGRE": "VZG",
+        "AIUABA": "AIB",
+        "ALTANEIRA": "ANY",
+        "ANTONINA DO NORTE": "ANE",
+        "ARARIPE": "ARP",
+        "ASSARE": "ASE",
+        "CAMPOS SALES": "CMS",
+        "FARIAS BRITO": "FBO",
+        "NOVA OLINDA": "NID",
+        "POTENGI": "PGY",
+        "SALITRE": "SIQ",
+        "SANTANA DO CARIRI": "SCI",
+        "TARRAFAS": "TRR",
+        "ALCANTARAS": "ACX",
+        "AMONTADA": "AOW",
+        "CARIRE": "CIW",
+        "CATUNDA": "CATN",
+        "COREAU": "CEA",
+        "FORQUILHA": "FRQ",
+        "GROAIRAS": "GRO",
+        "HIDROLANDIA": "HDA",
+        "IRAUCUBA": "ICB",
+        "ITAPIPOCA": "IOP",
+        "MASSAPE": "MSS",
+        "MERUOCA": "MEU",
+        "MIRAIMA": "MIK",
+        "MORAUJO": "MUJ",
+        "RERIUTABA": "RRB",
+        "SANTA QUITERIA": "SNQ",
+        "SANTANA DO ACARAU": "SAU",
+        "SOBRAL": "SOL",
+        "VARJOTA": "VJT",
+        "CARNAUBAL": "CUB",
+        "CROATA": "COZ",
+        "FRECHEIRINHA": "FHH",
+        "GRACA": "GCA",
+        "GUARACIABA DO NORTE": "GRN",
+        "IBIAPINA": "INX",
+        "MUCAMBO": "MUM",
+        "PACUJA": "PUJ",
+        "SAO BENEDITO": "SBN",
+        "TIANGUA": "TIG",
+        "UBAJARA": "UBJ",
+        "VICOSA DO CEARA": "VCC",
+        "ACARAU": "AAU",
+        "BARROQUINHA": "BQN",
+        "BELA CRUZ": "BCZ",
+        "CAMOCIM": "CCM",
+        "CHAVAL": "CHA",
+        "CRUZ": "CZW",
+        "GRANJA": "GNJ",
+        "ITAREMA": "IMW",
+        "JIJOCA DE JERICOACOARA": "JIJ",
+        "MARCO": "MAC",
+        "MARTINOPOLE": "MOP",
+        "MORRINHOS": "MNH",
+        "SENADOR SA": "SNR",
+        "URUOCA": "UUO",
+        "ACOPIARA": "ACR",
+        "CARIUS": "CYS",
+        "CATARINA": "CYN",
+        "IGUATU": "IAU",
+        "JUCAS": "JAS",
+        "MOMBACA": "MBC",
+        "PEDRA BRANCA": "PDB",
+        "PIQUET CARNEIRO": "PQT",
+        "QUIXELO": "QXO",
+        "SABOEIRO": "SOI",
+        "BAIXIO": "BXO",
+        "CEDRO": "CED",
+        "DEPUTADO IRAPUAN PINHEIRO": "DPI",
+        "PEREIRO": "ERR",
+        "ICO": "ICO",
+        "IPAUMIRIM": "IMI",
+        "JAGUARETAMA": "JAG",
+        "JAGUARIBARA": "JGB",
+        "JAGUARIBE": "JGE",
+        "LAVRAS DA MANGABEIRA": "LVM",
+        "MILHA": "MHW",
+        "OROS": "OOS",
+        "PEREIRO": "PEO",
+        "SOLONOPOLE": "SOP",
+        "UMARI": "UMI",
+        "CRATEUS": "CTS",
+        "INDEPENDENCIA": "IDA",
+        "NOVO ORIENTE": "NOE",
+        "QUITERIANOPOLIS": "QTS",
+        "ARARENDA": "ARA",
+        "IPAPORANGA": "IPZ",
+        "IPU": "IPU",
+        "IPUEIRAS": "IUE",
+        "MONSENHOR TABOSA": "MHT",
+        "NOVA RUSSAS": "NRU",
+        "PIRES FERREIRA": "PSF",
+        "PORANGA": "PGX",
+        "TAMBORIL": "TBL",
+        "ARNEIROZ": "AEZ",
+        "PARAMBU": "PBU",
+        "TAUÁ": "TUA",
+        "BANABUIU": "BIU",
+        "BOA VIAGEM": "BVG",
+        "CHORO": "CHO",
+        "IBARETAMA": "IBT",
+        "ITAPIUNA": "ITN",
+        "ITATIRA": "ITK",
+        "MADALENA": "MDX",
+        "QUIXADA": "QXA",
+        "QUIXERAMOBIM": "QXM",
+        "SENADOR POMPEU": "SPM"
+      },
+      RN: {
+        "ARES": "ARE",
+        "BAIA FORMOSA": "BFA",
+        "BARCELONA": "BRC",
+        "BENTO FERNANDES": "BFN",
+        "BOM JESUS": "BOU",
+        "BREJINHO": "BJN",
+        "CANGUARETAMA": "CGM",
+        "CEARA-MIRIM": "CAY",
+        "ESPIRITO SANTO": "ESO",
+        "EXTREMOZ": "EXZ",
+        "GOIANINHA": "GOH",
+        "IELMO MARINHO": "IEL",
+        "JANUARIO CICCO": "BASD",
+        "JAPI": "JAP",
+        "JOAO CAMARA": "JOA",
+        "JUNDIÁ": "JUCI",
+        "LAGOA D'ANTA": "LGD",
+        "LAGOA DE PEDRAS": "LGE",
+        "LAGOA DE VELHOS": "LEL",
+        "LAGOA SALGADA": "LLG",
+        "LAJES PINTADAS": "LES",
+        "MACAÍBA": "MCI",
+        "MAXARANGUAPE": "MXE",
+        "MONTANHAS": "MTH",
+        "MONTE ALEGRE": "MOG",
+        "MONTE DAS GAMELEIRAS": "MMS",
+        "NATAL": "NTL",
+        "NÍSIA FLORESTA": "NSF",
+        "NOVA CRUZ": "NCZ",
+        "PARNAMIRIM": "PWM",
+        "PASSA E FICA": "PEF",
+        "PASSAGEM": "PGM",
+        "PEDRO VELHO": "PDH",
+        "POÇO BRANCO": "POC",
+        "PRESIDENTE JUSCELINO": "SECD",
+        "PUREZA": "PZA",
+        "RIACHUELO": "RHE",
+        "RIO DO FOGO": "ROFG",
+        "RUY BARBOSA": "RYA",
+        "SANTA CRUZ": "SNZ",
+        "SANTA MARIA": "SAAI",
+        "SANTO ANTÔNIO": "SOT",
+        "SÃO BENTO DO TRAIRI": "SWB",
+        "SÃO GONÇALO DO AMARANTE": "SGM",
+        "SÃO JOSÉ DE MIPIBU": "SII",
+        "SÃO JOSÉ DO CAMPESTRE": "SAC",
+        "SÃO MIGUEL DO GOSTOSO": "SMD",
+        "SÃO PAULO DO POTENGI": "SLG",
+        "SÃO PEDRO": "SPK",
+        "SÃO TOMÉ": "STM",
+        "SENADOR ELOI DE SOUZA": "SOZ",
+        "SENADOR GEORGINO AVELINO": "SGV",
+        "SERRA DE SÃO BENTO": "SBK",
+        "SERRINHA": "SWR",
+        "SÍTIO NOVO": "SYO",
+        "TAIPU": "TAI",
+        "TANGARÁ": "TNG",
+        "TIBAU DO SUL": "TUL",
+        "TOUROS": "TUS",
+        "VÁRZEA": "VZA",
+        "VERA CRUZ": "VRZ",
+        "VILA FLOR": "VLR",
+        "AÇU": "ACU",
+        "ÁGUA NOVA": "AGV",
+        "ALEXANDRIA": "AXD",
+        "ALMINO AFONSO": "ALF",
+        "ANTÔNIO MARTINS": "ANM",
+        "APODI": "APD",
+        "AREIA BRANCA": "ABC",
+        "AUGUSTO SEVERO": "CWD",
+        "BARAÚNA": "BRN",
+        "CARAÚBAS": "CRB",
+        "CARNAUBAIS": "CNU",
+        "CORONEL JOÃO PESSOA": "CJA",
+        "DOUTOR SEVERIANO": "DRV",
+        "ENCANTO": "ECT",
+        "FELIPE GUERRA": "FPG",
+        "FRANCISCO DANTAS": "FAD",
+        "FRUTUOSO GOMES": "FRG",
+        "GOVERNADOR DIX-SEPT ROSADO": "GXS",
+        "GROSSOS": "GSS",
+        "IPANGUAÇU": "INC",
+        "ITAJÁ": "ITJ",
+        "ITAÚ": "ITW",
+        "JANDUÍS": "JIS",
+        "JOÃO DIAS": "JOD",
+        "JOSÉ DA PENHA": "JOP",
+        "LUCRÉCIA": "LUR",
+        "LUÍS GOMES": "LGO",
+        "MAJOR SALES": "MASA",
+        "MARCELINO VIEIRA": "MCV",
+        "MARTINS": "MTN",
+        "MESSIAS TARGINO": "MTR",
+        "MOSSORÓ": "MRO",
+        "OLHO-D'ÁGUA DO BORGES": "OAB",
+        "PARANÁ": "PWN",
+        "PARAÚ": "PAW",
+        "PATU": "PTW",
+        "PAU DOS FERROS": "PFR",
+        "PILÕES": "PLK",
+        "PORTALEGRE": "PLW",
+        "RAFAEL FERNANDES": "RFL",
+        "RAFAEL GODEIRO": "RFG",
+        "RIACHO DA CRUZ": "RCZ",
+        "RIACHO DE SANTANA": "RAD",
+        "RODOLFO FERNANDES": "RFF",
+        "SÃO FRANCISCO DO OESTE": "SFT",
+        "SÃO MIGUEL": "SMU",
+        "SÃO RAFAEL": "SFA",
+        "SERRA DO MEL": "SYF",
+        "SERRINHA DOS PINTOS": "SEP",
+        "SEVERIANO MELO": "SWV",
+        "TABOLEIRO GRANDE": "TLG",
+        "TENENTE ANANIAS": "TNN",
+        "TIBAU": "TIBA",
+        "TRIUNFO POTIGUAR": "TRI",
+        "UMARIZAL": "UZL",
+        "UPANEMA": "UNM",
+        "VENHA-VER": "VAVR",
+        "VIÇOSA": "VIO",
+        "ACARI": "ACI",
+        "BODÓ": "BOD",
+        "CAICÓ": "CIC",
+        "CAMPO REDONDO": "CDW",
+        "CARNAÚBA DOS DANTAS": "CUO",
+        "CERRO CORÁ": "CCW",
+        "CORONEL EZEQUIEL": "CEZ",
+        "CRUZETA": "CZE",
+        "CURRAIS NOVOS": "CSN",
+        "EQUADOR": "EQD",
+        "FLORÂNIA": "FNA",
+        "IPUEIRA": "IXP",
+        "JACANÃ": "JAN",
+        "JARDIM DE PIRANHAS": "JMH",
+        "JARDIM DO SERIDÓ": "JMS",
+        "JUCURUTU": "JTU",
+        "LAGOA NOVA": "LGN",
+        "OURO BRANCO": "OOB",
+        "PARELHAS": "PRH",
+        "SANTANA DO SERIDÓ": "SKA",
+        "SÃO FERNANDO": "SXF",
+        "SÃO JOÃO DO SABUGI": "SSY",
+        "SÃO JOSÉ DO SERIDÓ": "SKS",
+        "SÃO VICENTE": "SOV",
+        "SERRA NEGRA DO NORTE": "SAW",
+        "SERRA CAIADA": "SECD",
+        "TENENTE LAURENTINO CRUZ": "TNLO",
+        "TIMBAÚBA DOS BATISTAS": "TTT",
+        "AFONSO BEZERRA": "AFZ",
+        "ALTO DO RODRIGUES": "ADG",
+        "ANGICOS": "ANO",
+        "CAIÇARA DO NORTE": "CCR",
+        "CAIÇARA DO RIO DO VENTO": "CCV",
+        "FERNANDO PEDROZA": "FEP",
+        "GALINHOS": "GAL",
+        "GUAMARÉ": "GME",
+        "JANDAÍRA": "JDR",
+        "JARDIM DE ANGICOS": "JMG",
+        "LAJES": "LJE",
+        "MACAU": "MCU",
+        "PARAZINHO": "PRZ",
+        "PEDRA GRANDE": "PGR",
+        "PEDRA PRETA": "PAP",
+        "PEDRO AVELINO": "PDL",
+        "PENDÊNCIAS": "PNS",
+        "PORTO DO MANGUE": "POMA",
+        "SANTANA DO MATOS": "SMS",
+        "SÃO BENTO DO NORTE": "SBE"
+      },
+      PB: {
+        "ALHANDRA": "AHD",
+        "BAIA DA TRAICAO": "BAIB",
+        "BAYEUX": "BEX",
+        "CAAPORA": "CPX",
+        "CABEDELO": "CBD",
+        "CAPIM": "CAPI",
+        "CONDE": "CWX",
+        "CRUZ DO ESPIRITO SANTO": "CZDC",
+        "CUITE DE MAMANGUAPE": "CUTM",
+        "CURRAL DE CIMA": "CUCI",
+        "ITAPOROROCA": "IOO",
+        "JACARAU": "JAC",
+        "JOAO PESSOA": "JPA",
+        "LUCENA": "LUN",
+        "MAMANGUAPE": "MME",
+        "MARCACAO": "MRCA",
+        "MATARACA": "MCX",
+        "PEDRAS DE FOGO": "PFO",
+        "PEDRO REGIS": "PERG",
+        "PITIMBU": "PMU",
+        "RIACHAO DO POCO": "RDPC",
+        "RIO TINTO": "RTT",
+        "SANTA RITA": "SRI",
+        "SAO MIGUEL DE TAIPU": "SMPS",
+        "SAPE": "SPH",
+        "SOBRADO": "SOB",
+        "LAGOA GRANDE": "AGG",
+        "ALAGOINHA": "AHA",
+        "ARACAGI": "AAG",
+        "BELEM": "BEM",
+        "BORBOREMA": "BBE",
+        "CAICARA": "CIX",
+        "CALDAS BRANDAO": "CLSD",
+        "CUITEGI": "CIG",
+        "DUAS ESTRADAS": "DES",
+        "GUARABIRA": "GBI",
+        "GURINHEM": "GIH",
+        "ITABAIANA": "IYN",
+        "JURIPIRANGA": "JNG",
+        "LAGOA DE DENTRO": "LDT",
+        "LOGRADOURO": "LOG",
+        "MARI": "MAI",
+        "MOGEIRO": "MGY",
+        "MULUNGU": "MUL",
+        "PILAR": "PYR",
+        "PILOES": "PYL",
+        "PILOEZINHOS": "POZ",
+        "PIRPIRITUBA": "PPB",
+        "SALGADO DE SAO FELIX": "SSX",
+        "SAO JOSE DOS RAMOS": "SJWR",
+        "SERRA DA RAIZ": "SDZ",
+        "SERRARIA": "SRY",
+        "SERTAOZINHO": "SERT",
+        "LAGOA NOVA": "AGOA",
+        "ALCANTIL": "ALCA",
+        "ALGODAO DE JANDAIRA": "ALGJ",
+        "ARARA": "ARX",
+        "ARARUNA": "AAN",
+        "AREIA": "AEI",
+        "AREIAL": "AEA",
+        "AROEIRAS": "AES",
+        "BANANEIRAS": "BNN",
+        "BARAUNA": "BARS",
+        "BARRA DE SANTA ROSA": "BEN",
+        "BARRA DE SANTANA": "BRSN",
+        "BOA VISTA": "BVTA",
+        "BOQUEIRAO": "BQO",
+        "CACIMBA DE DENTRO": "CIBC",
+        "CAMPINA GRANDE": "CGE",
+        "CAMPO DE SANTANA": "TAM",
+        "CASSERENGUE": "CSRE",
+        "CATURITE": "CATR",
+        "CUBATI": "CBTC",
+        "CUITE": "CUT",
+        "DAMIAO": "DMIO",
+        "DONA INES": "DNS",
+        "ESPERANCA": "ERA",
+        "FAGUNDES": "FGS",
+        "FREI MARTINHO": "FRH",
+        "GADO BRAVO": "GAB",
+        "INGA": "INA",
+        "ITATUBA": "ITX",
+        "JUAREZ TAVORA": "JZT",
+        "JUAZEIRINHO": "JZH",
+        "LAGOA SECA": "LGCM",
+        "MASSARANDUBA": "MNU",
+        "MATINHAS": "MATN",
+        "MONTADAS": "MDK",
+        "NATUBA": "NUB",
+        "NOVA FLORESTA": "NVF",
+        "NOVA PALMEIRA": "NVL",
+        "OLIVEDOS": "OVD",
+        "PEDRA LAVRADA": "PVD",
+        "PICUI": "PCI",
+        "POCINHOS": "PHS",
+        "PUXINANA": "PXA",
+        "QUEIMADAS": "QUS",
+        "REMIGIO": "RMG",
+        "RIACHAO": "RAA",
+        "RIACHAO DO BACAMARTE": "RCBE",
+        "RIACHO DE SANTO ANTONIO": "RISA",
+        "SANTA CECILIA": "SCUM",
+        "SAO SEBASTIAO DE LAGOA DE ROCA": "SKL",
+        "SERIDO": "SIDO",
+        "SERRA REDONDA": "SDK",
+        "SOLANEA": "SOA",
+        "SOLEDADE": "SOD",
+        "SOSSEGO": "SOS",
+        "TENORIO": "TENO",
+        "UMBUZEIRO": "UUZ",
+        "AMPARO": "AMPA",
+        "BARRA DE SAO MIGUEL": "BRG",
+        "CABACEIRAS": "CCK",
+        "CAMALAU": "CMW",
+        "CARAUBAS": "CRAU",
+        "CONGO": "CXG",
+        "COXIXOLA": "COXI",
+        "GURJAO": "GRJ",
+        "LIVRAMENTO": "LVR",
+        "MONTEIRO": "MER",
+        "OURO VELHO": "OUV",
+        "PARARI": "PARR",
+        "PRATA": "PRK",
+        "SANTO ANDRE": "STND",
+        "SAO DOMINGOS DO CARIRI": "SDW",
+        "SAO JOAO DO CARIRI": "SCX",
+        "SAO JOAO DO TIGRE": "SXG",
+        "SAO JOSE DOS CORDEIROS": "SXC",
+        "SAO SEBASTIAO DO UMBUZEIRO": "SMZ",
+        "SERRA BRANCA": "SRB",
+        "SUME": "SUE",
+        "ZABELE": "ZABE",
+        "AREIA DE BARAUNAS": "ARBA",
+        "ASSUNCAO": "ASSC",
+        "BELEM DO BREJO DO CRUZ": "BBZB",
+        "BOM SUCESSO": "BMU",
+        "BREJO DO CRUZ": "BJZ",
+        "BREJO DOS SANTOS": "BOA",
+        "CACIMBA DE AREIA": "CKE",
+        "CACIMBAS": "CIMS",
+        "CAJAZEIRINHAS": "CAJA",
+        "CATINGUEIRA": "CGY",
+        "CATOLE DO ROCHA": "CRH",
+        "CONDADO": "CDX",
+        "COREMAS": "CES",
+        "DESTERRO": "DSTE",
+        "EMAS": "EMS",
+        "JERICO": "JCO",
+        "JUNCO DO SERIDO": "JDO",
+        "LAGOA": "LAG",
+        "MAE D'AGUA": "MEX",
+        "MALTA": "MLT",
+        "MATO GROSSO": "MGSS",
+        "MATUREIA": "MURE",
+        "PASSAGEM": "PSM",
+        "PATOS": "POS",
+        "PAULISTA": "PUX",
+        "POMBAL": "PBL",
+        "QUIXABA": "QXBR",
+        "RIACHO DOS CAVALOS": "RHOS",
+        "SALGADINHO": "SKH",
+        "SANTA LUZIA": "SLZ",
+        "SANTA TERESINHA": "SYH",
+        "SAO BENTINHO": "SBTP",
+        "SAO BENTO": "SBT",
+        "SAO DOMINGOS DE POMBAL": "SDMP",
+        "SAO JOSE DE ESPINHARAS": "SJH",
+        "SAO JOSE DO BONFIM": "SKF",
+        "SAO JOSE DO BREJO DO CRUZ": "SBCZ",
+        "SAO JOSE DO SABUGI": "SXS",
+        "SAO MAMEDE": "SAM",
+        "TAPEROA": "TER",
+        "TEIXEIRA": "TXE",
+        "VARZEA": "VRA",
+        "VISTA SERRANA": "VASR",
+        "AGUA BRANCA": "ABW",
+        "AGUIAR": "AGY",
+        "BOA VENTURA": "BVE",
+        "CONCEICAO": "CCI",
+        "CURRAL VELHO": "CWV",
+        "DIAMANTE": "DIA",
+        "IBIARA": "IIW",
+        "IGARACY": "IGRY",
+        "IMACULADA": "ILD",
+        "ITAPORANGA": "IRN",
+        "JURU": "JUX",
+        "MANAIRA": "MAN",
+        "NOVA OLINDA": "NOD",
+        "OLHO D'AGUA": "OLH",
+        "PEDRA BRANCA": "PKB",
+        "PIANCO": "PIC",
+        "PRINCESA ISABEL": "PIL",
+        "SANTA INES": "STNE",
+        "SANTANA DE MANGUEIRA": "SKT",
+        "SANTANA DOS GARROTES": "SOW",
+        "SAO JOSE DE CAIANA": "SKC",
+        "SAO JOSE DE PRINCESA": "SWJP",
+        "SERRA GRANDE": "SKET",
+        "TAVARES": "TVS",
+        "APARECIDA": "APAR",
+        "BERNARDINO BATISTA": "BNBT",
+        "BOM JESUS": "BEU",
+        "BONITO DE SANTA FE": "BSF",
+        "CACHOEIRA DOS INDIOS": "CHY",
+        "CAJAZEIRAS": "CZS",
+        "CARRAPATEIRA": "CWEL",
+        "LASTRO": "LSO",
+        "MARIZOPOLIS": "MRIZ",
+        "MONTE HOREBE": "MHB",
+        "NAZAREZINHO": "NZZ",
+        "POCO DANTAS": "PODA",
+        "POCO DE JOSE DE MOURA": "POCO",
+        "SANTA CRUZ": "SCZ",
+        "SANTA HELENA": "STH",
+        "SANTAREM": "STAE",
+        "SAO FRANCISCO": "SAFN",
+        "SAO JOAO DO RIO DO PEIXE": "SXQ",
+        "SAO JOSE DA LAGOA TAPADA": "SGP",
+        "SAO JOSE DE PIRANHAS": "SPN",
+        "SOUSA": "SZA",
+        "TRIUNFO": "TRU",
+        "UIRAUNA": "UIN",
+        "VIEIROPOLIS": "VIEI"
+      },
+      PE: {
+        "ABREU E LIMA": "ABU",
+        "ARACOIABA": "ARA",
+        "CABO DE SANTO AGOSTINHO": "CBO",
+        "CAMARAGIBE": "CGB",
+        "CHA DE ALEGRIA": "CHG",
+        "IGARASSU": "ISS",
+        "ILHA DE ITAMARACA": "IMC",
+        "ITAPISSUMA": "ITS",
+        "JABOATAO DOS GUARARAPES": "JBO",
+        "MORENO": "MEN",
+        "OLINDA": "OLD",
+        "PAULISTA": "PUI",
+        "RECIFE": "RCE",
+        "SAO LOURENCO DA MATA": "SDM",
+        "AMARAJI": "ARJ",
+        "CHA GRANDE": "CHDE",
+        "ESCADA": "EAA",
+        "GRAVATA": "GVT",
+        "IPOJUCA": "IPJ",
+        "POMBOS": "POB",
+        "PRIMAVERA": "PVE",
+        "SIRINHAEM": "SHM",
+        "VITORIA DE SANTO ANTAO": "VSA",
+        "ALIANCA": "AIN",
+        "BOM JARDIM": "BJI",
+        "BUENOS AIRES": "BOS",
+        "CAMUTANGA": "CUN",
+        "CARPINA": "CAA",
+        "CASINHAS": "CAS",
+        "CONDADO": "CDD",
+        "CUMARU": "CUW",
+        "FEIRA NOVA": "FNV",
+        "FERNANDO DE NORONHA": "FEN",
+        "FERREIROS": "FRS",
+        "GLORIA DO GOITA": "GGT",
+        "GOIANA": "GOI",
+        "ITAMBE": "IBX",
+        "ITAQUITINGA": "IQW",
+        "JOAO ALFREDO": "JFD",
+        "LAGOA DO CARRO": "LACA",
+        "LAGOA DO ITAENGA": "LOG",
+        "LIMOEIRO": "LIO",
+        "MACAPARANA": "MCN",
+        "MACHADOS": "MHO",
+        "NAZARE DA MATA": "NZM",
+        "OROBO": "OOO",
+        "PASSIRA": "PSS",
+        "PAUDALHO": "PLH",
+        "SALGADINHO": "SGH",
+        "SAO VICENTE FERRER": "SVF",
+        "SURUBIM": "SUU",
+        "TIMBAUBA": "TIU",
+        "TRACUNHAEM": "THM",
+        "VERTENTE DO LERIO": "VELE",
+        "VICENCIA": "VCI",
+        "AGRESTINA": "AGE",
+        "ALTINHO": "ANH",
+        "BARRA DE GUABIRABA": "BGB",
+        "BELO JARDIM": "BJM",
+        "BEZERROS": "BEZ",
+        "BONITO": "BNO",
+        "BREJO DA MADRE DE DEUS": "BDD",
+        "CACHOEIRINHA": "CIH",
+        "CAMOCIM DE SAO FELIX": "CFX",
+        "CARUARU": "CRU",
+        "CUPIRA": "CUP",
+        "FREI MIGUELINHO": "FML",
+        "JATAUBA": "JTB",
+        "RIACHO DAS ALMAS": "RHM",
+        "SAIRE": "SYE",
+        "SANTA CRUZ DO CAPIBARIBE": "SZC",
+        "SANTA MARIA DO CAMBUCA": "SCU",
+        "SAO BENTO DO UNA": "SUN",
+        "SAO CAITANO": "SIT",
+        "SAO JOAQUIM DO MONTE": "SQM",
+        "TACAIMBO": "TAC",
+        "TAQUARITINGA DO NORTE": "TQN",
+        "TORITAMA": "TTA",
+        "VERTENTES": "VTS",
+        "AGUA PRETA": "AGP",
+        "BARREIROS": "BAR",
+        "BELEM DE MARIA": "BEL",
+        "CATENDE": "CTN",
+        "CORTES": "COE",
+        "GAMELEIRA": "GLR",
+        "JAQUEIRA": "JAQU",
+        "JOAQUIM NABUCO": "JNO",
+        "LAGOA DOS GATOS": "LGG",
+        "MARAIAL": "MAA",
+        "PALMARES": "PLS",
+        "PANELAS": "PES",
+        "QUIPAPA": "QPQ",
+        "RIBEIRAO": "RBE",
+        "RIO FORMOSO": "RIF",
+        "SAO BENEDITO DO SUL": "SDI",
+        "SAO JOSE DA COROA GRANDE": "SEC",
+        "TAMANDARE": "TAM",
+        "XEXEU": "XEX",
+        "AGUAS BELAS": "AGB",
+        "ANGELIM": "AGM",
+        "BOM CONSELHO": "BCE",
+        "BREJAO": "BRA",
+        "CAETES": "CEK",
+        "CALCADO": "CDK",
+        "CANHOTINHO": "CHH",
+        "CAPOEIRAS": "CYX",
+        "CORRENTES": "COT",
+        "GARANHUNS": "GUS",
+        "IATI": "IKI",
+        "IBIRAJUBA": "IJB",
+        "JUCATI": "JUCT",
+        "JUPI": "JUI",
+        "JUREMA": "JUM",
+        "LAGOA DO OURO": "LOO",
+        "LAJEDO": "LJD",
+        "PALMEIRINA": "PME",
+        "PARANATAMA": "PMK",
+        "SALOA": "SLX",
+        "SAO JOAO": "SOJ",
+        "TEREZINHA": "TEZ",
+        "ALAGOINHA": "AGH",
+        "ARCOVERDE": "ACV",
+        "BUIQUE": "BQI",
+        "GUARACI": "IRC",
+        "ITAIBA": "IYB",
+        "PEDRA": "PED",
+        "PESQUEIRA": "PQE",
+        "POCAO": "PCO",
+        "SANHARO": "SNH",
+        "SERTANIA": "STN",
+        "TUPANATINGA": "TTN",
+        "VENTUROSA": "VUS",
+        "BETANIA": "BEA",
+        "CALUMBI": "CLI",
+        "CUSTODIA": "CUD",
+        "FLORES": "FLS",
+        "IBIMIRIM": "IIM",
+        "INAJA": "INJ",
+        "JATOBA": "VJT",
+        "MANARI": "MANA",
+        "PETROLANDIA": "PTR",
+        "SANTA CRUZ DA BAIXA VERDE": "SCBV",
+        "SERRA TALHADA": "SHD",
+        "TACARATU": "TTU",
+        "TRIUNFO": "TNF",
+        "BELEM DE SAO FRANCISCO": "BLF",
+        "CARNAUBEIRA DA PENHA": "CRNU",
+        "FLORESTA": "FRT",
+        "ITACURUBA": "IWB",
+        "CEDRO": "CXD",
+        "MIRANDIBA": "MDB",
+        "SALGUEIRO": "SGI",
+        "SAO JOSE DO BELMONTE": "SDB",
+        "SERRITA": "SEY",
+        "TERRA NOVA": "TEV",
+        "VERDEJANTE": "VJE",
+        "AFOGADOS DA INGAZEIRA": "AFI",
+        "BREJINHO": "BJH",
+        "CARNAIBA": "CNB",
+        "INGAZEIRA": "IGZ",
+        "ITAPETIM": "IKM",
+        "QUIXABA": "QUIA",
+        "SANTA TEREZINHA": "SAZ",
+        "SAO JOSE DO EGITO": "SJG",
+        "SOLIDAO": "SWL",
+        "TABIRA": "TBR",
+        "TUPARETAMA": "TUE",
+        "BODOCO": "BOO",
+        "CABROBO": "COO",
+        "EXU": "EXU",
+        "GRANITO": "GIT",
+        "IPUBI": "IPB",
+        "MOREILANDIA": "MODA",
+        "OROCO": "ORO",
+        "OURICURI": "OUI",
+        "PARNAMIRIM": "PIM",
+        "SANTA CRUZ": "STKZ",
+        "SANTA FILOMENA": "SNF",
+        "ARARIPINA": "ARR",
+        "TRINDADE": "TDD",
+        "AFRANIO": "AFO",
+        "DORMENTES": "DOR",
+        "LAGOA GRANDE": "LAGD",
+        "PETROLINA": "PTA",
+        "SANTA MARIA DA BOA VISTA": "SIB"
+      },
+      AL: {
+        "BARRA DE SANTO ANTONIO": "BNA",
+        "COQUEIRO SECO": "OCQ",
+        "MACEIO": "MCO",
+        "MARECHAL DEODORO": "MHD",
+        "MESSIAS": "MEA",
+        "PARIPUEIRA": "PAPU",
+        "PILAR": "PLR",
+        "RIO LARGO": "RGO",
+        "SANTA LUZIA DO NORTE": "SZT",
+        "SAO LUIS DO QUITUNDE": "SLQ",
+        "SATUBA": "STU",
+        "BRANQUINHA": "BQH",
+        "CAMPESTRE": "CPE",
+        "COLONIA LEOPOLDINA": "COL",
+        "FLEXEIRAS": "FXS",
+        "IBATEGUARA": "IBG",
+        "JACUIPE": "JPE",
+        "JAPARATINGA": "JPG",
+        "JOAQUIM GOMES": "JQG",
+        "JUNDIA": "JUD",
+        "MARAGOGI": "MGI",
+        "MATRIZ DE CAMARAGIBE": "MZC",
+        "MURICI": "MRI",
+        "NOVO LINO": "NLO",
+        "PASSO DE CAMARAGIBE": "PEG",
+        "PORTO CALVO": "PCV",
+        "PORTO DE PEDRAS": "POP",
+        "SAO JOSE DA LAJE": "SJJ",
+        "SAO MIGUEL DOS MILAGRES": "SYM",
+        "UNIAO DOS PALMARES": "UPS",
+        "ANADIA": "AAD",
+        "ATALAIA": "ATL",
+        "BARRA DE SAO MIGUEL": "BDG",
+        "BOCA DA MATA": "BOD",
+        "CAJUEIRO": "CJO",
+        "CAMPO ALEGRE": "CLR",
+        "CAPELA": "CPA",
+        "CHA PRETA": "CHK",
+        "CORURIPE": "CUI",
+        "JEQUIÁ DA PRAIA": "JQP",
+        "MAR VERMELHO": "MVM",
+        "PAULO JACINTO": "PJO",
+        "PINDOBA": "PYD",
+        "QUEBRANGULO": "QGO",
+        "ROTEIRO": "RTI",
+        "SANTANA DO MUNDAU": "SUD",
+        "SAO MIGUEL DOS CAMPOS": "SMM",
+        "VICOSA": "VIS",
+        "BELEM": "BLX",
+        "CACIMBINHAS": "CBH",
+        "COITE DO NOIA": "CYO",
+        "DOIS RIACHOS": "DSH",
+        "ESTRELA DE ALAGOAS": "EAL",
+        "IGACI": "ICY",
+        "MAJOR ISIDORO": "MJR",
+        "MARIBONDO": "MBO",
+        "MINADOR DO NEGRAO": "MNX",
+        "PALMEIRA DOS INDIOS": "PIN",
+        "TANQUE D'ARCA": "TQD",
+        "TAQUARANA": "TQA",
+        "ARAPIRACA": "AIR",
+        "BATALHA": "BTH",
+        "BELO MONTE": "BLN",
+        "CAMPO GRANDE": "CGN",
+        "CRAIBAS": "KIS",
+        "FEIRA GRANDE": "FGE",
+        "FELIZ DESERTO": "FZO",
+        "GIRAU DO PONCIANO": "GUP",
+        "IGREJA NOVA": "IGJ",
+        "JARAMATAIA": "JAA",
+        "JUNQUEIRO": "JQO",
+        "LAGOA DA CANOA": "LDC",
+        "LIMOEIRO DE ANADIA": "LIM",
+        "OLHO D'AGUA GRANDE": "OGG",
+        "PENEDO": "PND",
+        "PIACABUCU": "PIB",
+        "PORTO REAL DO COLEGIO": "PLC",
+        "SAO BRAS": "SOB",
+        "SAO SEBASTIAO": "SWS",
+        "TEOTONIO VILELA": "TNVL",
+        "TRAIPU": "TRP",
+        "CARNEIROS": "CKN",
+        "JACARE DOS HOMENS": "JSH",
+        "MARAVILHA": "MVI",
+        "MONTEIROPOLIS": "MON",
+        "OLHO D'AGUA DAS FLORES": "OLF",
+        "OLIVENCA": "OIV",
+        "OURO BRANCO": "OUB",
+        "PALESTINA": "PSY",
+        "PAO DE ACUCAR": "PKW",
+        "POCO DAS TRINCHEIRAS": "PCH",
+        "SANTANA DO IPANEMA": "SNN",
+        "SAO JOSE DA TAPERA": "SPX",
+        "SENADOR RUI PALMEIRA": "SUP",
+        "AGUA BRANCA": "ABN",
+        "CANAPI": "CNK",
+        "DELMIRO GOUVEIA": "DGA",
+        "INHAPI": "IHP",
+        "MATA GRANDE": "MGR",
+        "OLHO D'AGUA DO CASADO": "OHD",
+        "PARICONHA": "PRCH",
+        "PIRANHAS": "PYH"
+      },
+      BA: {
+        "CAMACARI": "CAR",
+        "CANDEIAS": "CIS",
+        "CATU": "CAU",
+        "DIAS D'AVILA": "DSA",
+        "ITAPARICA": "IAP",
+        "LAURO DE FREITAS": "LFS",
+        "MADRE DE DEUS": "MDY",
+        "MATA DE SAO JOAO": "MJO",
+        "POJUCA": "PJC",
+        "SALVADOR": "SDR",
+        "SAO FRANCISCO DO CONDE": "SFN",
+        "SAO SEBASTIAO DO PASSE": "SSE",
+        "SIMOES FILHO": "SMF",
+        "VERA CRUZ": "VCZ",
+        "ALMADINA": "ALM",
+        "ARATACA": "ATW",
+        "BARRO PRETO": "BPO",
+        "BUERAREMA": "BUE",
+        "COARACI": "COC",
+        "FIRMINO ALVES": "FMV",
+        "FLORESTA AZUL": "FAL",
+        "IBICARAI": "ICR",
+        "IBICUI": "IBC",
+        "IGUAI": "IUI",
+        "ILHEUS": "ILH",
+        "ITABUNA": "ITB",
+        "ITAJU DO COLONIA": "IJL",
+        "ITAJUIPE": "IJP",
+        "ITAPE": "YPE",
+        "ITAPITANGA": "ITT",
+        "ITORORO": "IRR",
+        "JUSSARI": "JSI",
+        "NOVA CANAA": "NCO",
+        "SANTA CRUZ DA VITORIA": "SVT",
+        "SAO JOSE DA VITORIA": "SVQ",
+        "UNA": "WNA",
+        "URUCUCA": "UUU",
+        "EUNAPOLIS": "EUS",
+        "GUARATINGA": "GNG",
+        "ITABELA": "IBH",
+        "ITAGIMIRIM": "IMM",
+        "ITAPEBI": "IEY",
+        "PORTO SEGURO": "PGU",
+        "SANTA CRUZ CABRALIA": "SZB",
+        "ALCOBACA": "ALC",
+        "CARAVELAS": "CRV",
+        "IBIRAPUA": "IBP",
+        "ITAMARAJU": "IMJ",
+        "ITANHEM": "IHM",
+        "JUCURUCU": "JUC",
+        "LAJEDAO": "LED",
+        "MEDEIROS NETO": "MSN",
+        "MUCURI": "MUI",
+        "NOVA VICOSA": "NVV",
+        "PRADO": "PRD",
+        "TEIXEIRA DE FREITAS": "TAF",
+        "VEREDA": "VEE",
+        "BELMONTE": "BLE",
+        "CAMACAN": "CNC",
+        "CANAVIEIRAS": "CVS",
+        "ITARANTIM": "IRM",
+        "MASCOTE": "MAE",
+        "PAU BRASIL": "PSL",
+        "POTIRAGUA": "POG",
+        "SANTA LUZIA": "SUY",
+        "AURELINO LEAL": "AEL",
+        "BARRA DO ROCHA": "BCH",
+        "CAMAMU": "CMM",
+        "GANDU": "GDU",
+        "GONGOGI": "GGG",
+        "IBIRAPITANGA": "IIP",
+        "IBIRATAIA": "IRT",
+        "IGRAPIUNA": "IGH",
+        "ITACARE": "IRE",
+        "ITAMARI": "IMY",
+        "ITUBERA": "IUR",
+        "MARAU": "MRU",
+        "NILO PECANHA": "NIA",
+        "NOVA IBIA": "NIB",
+        "PIRAI DO NORTE": "PDQ",
+        "PRESIDENTE TANCREDO NEVES": "PTQ",
+        "TEOLANDIA": "TEN",
+        "UBAITABA": "UIA",
+        "UBATA": "UAT",
+        "WENCESLAU GUIMARAES": "WGS",
+        "AIQUARA": "AIQ",
+        "APUAREMA": "APE",
+        "CRAVOLANDIA": "CVO",
+        "DARIO MEIRA": "DMA",
+        "IPIAU": "IPW",
+        "IRAJUBA": "IRJ",
+        "ITAGI": "YGI",
+        "ITAGIBA": "IGB",
+        "ITAQUARA": "IQA",
+        "ITIRUCU": "IIC",
+        "JAGUAQUARA": "JGQ",
+        "JEQUIE": "JEE",
+        "JITAUNA": "JTN",
+        "LAFAIETE COUTINHO": "LFE",
+        "LAJEDO DO TABOCAL": "LLT",
+        "MANOEL VITORINO": "MVO",
+        "MARACAS": "MAS",
+        "NOVA ITARANA": "NOI",
+        "PLANALTINO": "PLY",
+        "SANTA INES": "SAT",
+        "BAIXA GRANDE": "BXD",
+        "CAEM": "CKX",
+        "CALDEIRAO GRANDE": "CDG",
+        "CAPIM GROSSO": "CCG",
+        "JACOBINA": "JBN",
+        "MACAJUBA": "MJU",
+        "MAIRI": "MRY",
+        "MIGUEL CALMON": "MGN",
+        "MIRANGABA": "MIN",
+        "MORRO DO CHAPEU": "MHU",
+        "MUNDO NOVO": "MNO",
+        "OUROLANDIA": "OUL",
+        "PIRITIBA": "PRI",
+        "PONTO NOVO": "PNF",
+        "QUIXABEIRA": "QXR",
+        "SAO JOSE DO JACUIPE": "SUJ",
+        "SAUDE": "SUX",
+        "SERROLANDIA": "SEL",
+        "TAPIRAMUTA": "TAP",
+        "VARZEA DA ROCA": "VDA",
+        "VARZEA DO POCO": "VZC",
+        "VARZEA NOVA": "VOA",
+        "AMERICA DOURADA": "AED",
+        "BARRA DO MENDES": "BDS",
+        "BARRO ALTO": "BLT",
+        "CAFARNAUM": "CFM",
+        "CANARANA": "CNR",
+        "CENTRAL": "CAL",
+        "IBIPEBA": "IBB",
+        "IBITITA": "IIY",
+        "IRECE": "IEE",
+        "JOAO DOURADO": "JDY",
+        "JUSSARA": "JSL",
+        "LAPAO": "LPO",
+        "MULUNGU DO MORRO": "MUD",
+        "PRESIDENTE DUTRA": "PDN",
+        "SAO GABRIEL": "SYK",
+        "UIBAI": "UII",
+        "BARRA": "BA",
+        "GENTIO DO OURO": "GOU",
+        "ITAGUACU DA BAHIA": "IGD",
+        "XIQUE-XIQUE": "XXQ",
+        "CASA NOVA": "CSV",
+        "CURACA": "CRX",
+        "JUAZEIRO": "JUO",
+        "SOBRADINHO": "SHB",
+        "UAUA": "UAU",
+        "ANDORINHA": "ADK",
+        "ANTONIO GONCALVES": "AVS",
+        "CAMPO FORMOSO": "CFS",
+        "FILADELFIA": "FDA",
+        "ITIUBA": "IIB",
+        "JAGUARARI": "JGA",
+        "PINDOBACU": "PDC",
+        "SENHOR DO BONFIM": "SBM",
+        "UMBURANAS": "UMS",
+        "CAMPO ALEGRE DE LOURDES": "CGR",
+        "PILAO ARCADO": "PID",
+        "REMANSO": "REM",
+        "SENTO SE": "SES",
+        "AGUA FRIA": "AFA",
+        "AMELIA RODRIGUES": "ARG",
+        "ANGUERA": "AEX",
+        "ANTONIO CARDOSO": "ATC",
+        "CONCEICAO DA FEIRA": "CFA",
+        "CONCEICAO DO JACUIPE": "CJP",
+        "CORACAO DE MARIA": "CEI",
+        "FEIRA DE SANTANA": "FSA",
+        "IPECAETA": "IEC",
+        "IRARA": "IRX",
+        "SANTA BARBARA": "SNB",
+        "SANTANOPOLIS": "SXA",
+        "SANTO AMARO": "SNA",
+        "SANTO ESTEVAO": "SEV",
+        "SAO GONCALO DOS CAMPOS": "SGC",
+        "SAUBARA": "SUF",
+        "SERRA PRETA": "SXX",
+        "TANQUINHO": "TQH",
+        "TEODORO SAMPAIO": "TDS",
+        "TERRA NOVA": "TNV",
+        "ADUSTINA": "ASN",
+        "ANTAS": "ANX",
+        "BANZAE": "BZE",
+        "CICERO DANTAS": "CDT",
+        "CIPO": "CIP",
+        "FATIMA": "FIA",
+        "HELIOPOLIS": "HIS",
+        "NOVA SOURE": "NVO",
+        "NOVO TRIUNFO": "NTF",
+        "PARIPIRANGA": "PGA",
+        "RIBEIRA DO AMPARO": "RII",
+        "RIBEIRA DO POMBAL": "RBP",
+        "TUCANO": "TCN",
+        "CANSANCAO": "CSO",
+        "CANUDOS": "CUS",
+        "EUCLIDES DA CUNHA": "ECN",
+        "MONTE SANTO": "MEO",
+        "QUIJINGUE": "QJ",
+        "ARACI": "AAC",
+        "BARROCAS": "BRK",
+        "BIRITINGA": "BIR",
+        "CANDEAL": "CNW",
+        "CAPELA DO ALTO ALEGRE": "CWG",
+        "CONCEICAO DO COITE": "CC",
+        "GAVIAO": "GVO",
+        "ICHU": "ICH",
+        "LAMARAO": "LAR",
+        "NORDESTINA": "NTN",
+        "NOVA FATIMA": "NFT",
+        "PE DE SERRA": "PPW",
+        "PINTADAS": "PNY",
+        "QUEIMADAS": "QES",
+        "RETIROLANDIA": "RRD",
+        "RIACHAO DO JACUIPE": "RJP",
+        "SANTALUZ": "SUZ",
+        "SAO DOMINGOS": "SGQ",
+        "SERRINHA": "SEH",
+        "TEOFILANDIA": "TOF",
+        "VALENTE": "VLE",
+        "ABARE": "ABE",
+        "CHORROCHO": "CKH",
+        "CORONEL JOAO SA": "CRJ",
+        "GLORIA": "GLO",
+        "JEREMOABO": "JRO",
+        "MACURURE": "MUX",
+        "PAULO AFONSO": "PAF",
+        "PEDRO ALEXANDRE": "PXD",
+        "RODELAS": "RDE",
+        "SANTA BRIGIDA": "SGY",
+        "SITIO DO QUINTO": "SQI",
+        "BOA VISTA DO TUPIM": "BTM",
+        "BONITO": "BNK",
+        "IACU": "ICU",
+        "IBIQUERA": "IIQ",
+        "IPIRA": "IPI",
+        "ITABERABA": "IEB",
+        "ITAETE": "IEW",
+        "LAJEDINHO": "LEH",
+        "MARCIONILIO SOUZA": "MNZ",
+        "RUY BARBOSA": "RYB",
+        "UTINGA": "UTG",
+        "WAGNER": "WGR",
+        "ANDARAI": "ANI",
+        "BONINAL": "BOL",
+        "IRAQUARA": "IRQ",
+        "LENCOIS": "LCS",
+        "MUCUGE": "MCG",
+        "NOVA REDENCAO": "NVC",
+        "PALMEIRAS": "PLE",
+        "SEABRA": "SEB",
+        "SOUTO SOARES": "SUT",
+        "ACAJUTIBA": "AJB",
+        "ALAGOINHAS": "ALH",
+        "APORA": "APR",
+        "ARACAS": "ACK",
+        "ARAMARI": "AAM",
+        "CARDEAL DA SILVA": "CSW",
+        "CONDE": "CNX",
+        "ENTRE RIOS": "ERS",
+        "ESPLANADA": "ESA",
+        "INHAMBUPE": "IH",
+        "ITANAGRA": "INR",
+        "OURICANGAS": "OUG",
+        "PEDRAO": "PEK",
+        "SATIRO DIAS": "STK",
+        "CRISOPOLIS": "CS",
+        "ITAPICURU": "IUW",
+        "JANDAIRA": "JDI",
+        "OLINDINA": "ONN",
+        "RIO REAL": "ROL",
+        "CABACEIRAS DO PARAGUACU": "CPQ",
+        "CACHOEIRA": "CHE",
+        "CASTRO ALVES": "CAV",
+        "CRUZ DAS ALMAS": "CZM",
+        "GOVERNADOR MANGABEIRA": "GMG",
+        "ITATIM": "ITF",
+        "MARAGOGIPE": "MGP",
+    
+        "MILAGRES": "MLG",
+        "MURITIBA": "MTI",
+        "RAFAEL JAMBEIRO": "RLO",
+        "SANTA TERESINHA": "SYN",
+        "SAO FELIX": "SFX",
+        "SAPEACU": "SEU",
+        "AMARGOSA": "ARA",
+        "ARATUIPE": "AUP",
+        "BREJOES": "BJX",
+        "CAIRU": "CIU",
+        "CONCEICAO DO ALMEIDA": "CDL",
+        "DOM MACEDO COSTA": "DDC",
+        "ELISIO MEDRADO": "EMD",
+        "JAGUARIPE": "JUP",
+        "JIQUIRICA": "JIQ",
+        "LAJE": "LAJ",
+        "MUNIZ FERREIRA": "MIZ",
+        "MUTUIPE": "MUU",
+        "NAZARE": "NAE",
+        "SALINAS DA MARGARIDA": "SAD",
+        "SANTO ANTONIO DE JESUS": "SNJ",
+        "SAO FELIPE": "SFE",
+        "SAO MIGUEL DAS MATAS": "SYG",
+        "TAPEROA": "TOA",
+        "UBAIRA": "UBR",
+        "VALENCA": "VEC",
+        "VARZEDO": "VZO",
+        "CAATIBA": "CTB",
+        "ITAMBE": "IAM",
+        "ITAPETINGA": "ING",
+        "MACARANI": "MCR",
+        "MAIQUINIQUE": "MQQ",
+        "ANAGE": "AAE",
+        "BARRA DO CHOCA": "BHO",
+        "BELO CAMPO": "BLP",
+        "BOA NOVA": "BOV",
+        "BOM JESUS DA SERRA": "BJD",
+        "CAETANOS": "CTC",
+        "CANDIDO SALES": "CDS",
+        "CARAIBAS": "CIZ",
+        "ENCRUZILHADA": "EZL",
+        "MIRANTE": "MRQ",
+        "PLANALTO": "PNL",
+        "POCOES": "PCE",
+        "RIBEIRAO DO LARGO": "RLR",
+        "TREMEDAL": "TEL",
+        "VITORIA DA CONQUISTA": "VCA",
+        "ABAIRA": "ABR",
+        "BARRA DA ESTIVA": "BAV",
+        "CONTENDAS DO SINCORA": "CDC",
+        "IBICOARA": "IIO",
+        "IRAMAIA": "IMX",
+        "ITUACU": "ICX",
+        "JUSSIAPE": "JSE",
+        "PIATA": "PYT",
+        "TANHACU": "THU",
+        "CACULE": "CC",
+        "CONDEUBA": "CEU",
+        "CORDEIROS": "CWS",
+        "GUAJERU": "GEU",
+        "IBIASSUCE": "ISC",
+        "JACARACI": "JCC",
+        "LICINIO DE ALMEIDA": "LID",
+        "MAETINGA": "MAY",
+        "MORTUGABA": "MTG",
+        "PIRIPA": "PPK",
+        "PRESIDENTE JANIO QUADROS": "PJQ",
+        "URANDI": "UDI",
+        "ARACATU": "AAW",
+        "BRUMADO": "BRM",
+        "DOM BASILIO": "DBL",
+        "LIVRAMENTO DE NOSSA SENHORA": "LVB",
+        "MALHADA DE PEDRAS": "MDD",
+        "RIO DO ANTONIO": "RIT",
+        "BOM JESUS DA LAPA": "BMP",
+        "MATINA": "MTW",
+        "RIACHO DE SANTANA": "RHS",
+        "SERRA DO RAMALHO": "SHF",
+        "SITIO DO MATO": "SOQ",
+        "CAETITE": "CTT",
+        "CANDIBA": "CDY",
+        "GUANAMBI": "GNB",
+        "IGAPORA": "IGO",
+        "LAGOA REAL": "LRL",
+        "PALMAS DE MONTE ALTO": "PSD",
+        "PINDAI": "PDY",
+        "SEBASTIAO LARANJEIRAS": "SLJ",
+        "BOQUIRA": "BQA",
+        "BROTAS DE MACAUBAS": "BSC",
+        "IBIPITANGA": "IIT",
+        "IBITIARA": "IRK",
+        "IBOTIRAMA": "IBM",
+        "IPUPIARA": "IIX",
+        "MACAUBAS": "MCB",
+        "MORPARA": "MPM",
+        "MUQUEM DE SAO FRANCISCO": "MSF",
+        "NOVO HORIZONTE": "NHZ",
+        "OLIVEIRA DOS BREJINHOS": "OJH",
+        "PARATINGA": "PRN",
+        "CANAPOLIS": "CPK",
+        "CORIBE": "CYB",
+        "CORRENTINA": "CTI",
+        "JABORANDI": "JBI",
+        "SANTA MARIA DA VITORIA": "SMV",
+        "SANTANA": "SNT",
+        "SÃO FELIX DO CORIBE": "SFQ",
+        "SERRA DOURADA": "SDW",
+        "CARINHANHA": "CIN",
+        "COCOS": "COX",
+        "FEIRA DA MATA": "FDM",
+        "IUIU": "IIJ",
+        "MALHADA": "MLH",
+        "BOTUPORA": "BUR",
+        "CATURAMA": "CTU",
+        "ERICO CARDOSO": "ERC",
+        "PARAMIRIM": "PMI",
+        "RIO DE CONTAS": "ROC",
+        "RIO DO PIRES": "ROR",
+        "TANQUE NOVO": "TQO",
+        "ANGICAL": "ANL",
+        "BAIANOPOLIS": "BPL",
+        "BARREIRAS": "BES",
+        "BREJOLANDIA": "BJL",
+        "CATOLANDIA": "CKY",
+        "COTEGIPE": "CGP",
+        "CRISTOPOLIS": "CKT",
+        "LUIS EDUARDO MAGALHAES": "MIO",
+        "RIACHAO DAS NEVES": "RHV",
+        "SAO DESIDERIO": "SSR",
+        "TABOCAS DO BREJO VELHO": "TBV",
+        "WANDERLEY": "VNY",
+        "BURITIRAMA": "BIA",
+        "FORMOSA DO RIO PRETO": "FRP",
+        "MANSIDAO": "MMD",
+        "SANTA RITA DE CASSIA": "SRC"
+      },
+      PI: {
+        "ALTO LONGA": "AOX",
+        "ALTOS": "ATS",
+        "BENEDITINOS": "BTS",
+        "BOQUEIRAO DO PIAUI": "BQRO",
+        "CAMPO MAIOR": "CRA",
+        "COCAL DE TELHA": "CLTH",
+        "COIVARAS": "CRAS",
+        "CURRALINHOS": "CLHO",
+        "DEMERVAL LOBAO": "DVB",
+        "JATOBA DO PIAUI": "JAOB",
+        "JOSE DE FREITAS": "JFT",
+        "LAGOA ALEGRE": "LGAG",
+        "LAGOA DO PIAUI": "LAKY",
+        "MONSENHOR GIL": "MHG",
+        "NOSSA SENHORA DE NAZARE": "NSHN",
+        "NOVO SANTO ANTONIO": "NSTA",
+        "PAU D'ARCO DO PIAUÍ": "PDCP",
+        "SIGEFREDO PACHECO": "SFPO",
+        "TERESINA": "TSA",
+        "UNIAO": "UIO",
+        "BARRAS": "BRZ",
+        "BOA HORA": "BOHO",
+        "CABECEIRAS DO PIAUI": "CBRS",
+        "CAMPO LARGO DO PIAUI": "CLAR",
+        "MIGUEL ALVES": "MLV",
+        "NOSSA SENHORA DOS REMEDIOS": "NRM",
+        "PORTO": "PRW",
+        "ASSUNCAO DO PIAUI": "ASUO",
+        "BURITI DOS MONTES": "BUMS",
+        "CASTELO DO PIAUI": "CPI",
+        "JUAZEIRO DO PIAUI": "JUAZ",
+        "PRATA DO PIAUI": "PPY",
+        "SAO JOAO DA SERRA": "SXJ",
+        "SAO MIGUEL DO TAPUIO": "SUO",
+        "AGRICOLANDIA": "AIL",
+        "AGUA BRANCA": "ABA",
+        "AMARANTE": "ANT",
+        "ANGICAL DO PIAUI": "ALDB",
+        "BARRO DURO": "BDU",
+        "ELESBAO VELOSO": "EEV",
+        "HUGO NAPOLEAO": "HUN",
+        "JARDIM DO MULATO": "JDMU",
+        "LAGOINHA DO PIAUI": "LAOI",
+        "MIGUEL LEAO": "MIE",
+        "OLHO D'AGUA DO PIAUI": "OHDU",
+        "PALMEIRAIS": "PYA",
+        "PASSAGEM FRANCA DO PIAUI": "PGFA",
+        "REGENERACAO": "RGES",
+        "SANTO ANTONIO DOS MILAGRES": "STML",
+        "SAO FELIX DO PIAUI": "SXI",
+        "SAO GONCALO DO PIAUI": "SCY",
+        "SAO MIGUEL DA BAIXA GRANDE": "SMBG",
+        "SAO PEDRO DO PIAUI": "SPP",
+        "BRASILEIRA": "BSLA",
+        "CAPITAO DE CAMPOS": "CPW",
+        "DOMINGOS MOURAO": "DMML",
+        "LAGOA DE SAO FRANCISCO": "LGSF",
+        "MILTON BRANDAO": "MLTB",
+        "PEDRO II": "PDO",
+        "PIRIPIRI": "PIP",
+        "BOM PRINCIPIO DO PIAUI": "BMPP",
+        "BURITI DOS LOPES": "BIL",
+        "CAJUEIRO DA PRAIA": "CJUO",
+        "CARAUBAS DO PIAUI": "CRWB",
+        "CAXINGO": "CXGO",
+        "COCAL": "CCX",
+        "COCAL DOS ALVES": "CLAV",
+        "ILHA GRANDE": "ILGD",
+        "JOAQUIM PIRES": "JQP",
+        "LUIS CORREIA": "LSR",
+        "MURICI DOS PORTELAS": "MIPA",
+        "PARNAIBA": "PNAB",
+        "BATALHA": "BLH",
+        "ESPERANTINA": "ENA",
+        "JOCA MARQUES": "JCMS",
+        "LUZILANDIA": "LZN",
+        "MADEIRO": "MDIO",
+        "MATIAS OLIMPIO": "MSO",
+        "MORRO DO CHAPEU DO PIAUI": "MRCP",
+        "PIRACURUCA": "PCR",
+        "SAO JOAO DA FRONTEIRA": "SJFT",
+        "SAO JOAO DO ARRAIAL": "SJRL",
+        "SAO JOSE DO DIVINO": "SJDV",
+        "ALAGOINHA DO PIAUI": "AKP",
+        "ALEGRETE DO PIAUI": "ATPI",
+        "AROEIRAS DO ITAIM": "ARDY",
+        "BELEM DO PIAUI": "BLMP",
+        "BOCAINA": "BCI",
+        "CAJAZEIRAS DO PIAUI": "CZEI",
+        "CALDEIRAO GRANDE DO PIAUI": "CDGD",
+        "CAMPO GRANDE DO PIAUI": "CGDP",
+        "CARIDADE DO PIAUI": "CDDE",
+        "COLONIA DO PIAUI": "CLPI",
+        "CURRAL NOVO DO PIAUI": "CLNW",
+        "DOM EXPEDITO LOPES": "DEL",
+        "FLORESTA DO PIAUI": "FRTA",
+        "FRANCISCO MACEDO": "FCCM",
+        "FRANCISCO SANTOS": "FCC",
+        "FRONTEIRAS": "FNT",
+        "GEMINIANO": "GMNO",
+        "IPIRANGA DO PIAUI": "IPD",
+        "ITAINOPOLIS": "ITO",
+        "JAICOS": "JOS",
+        "MARCOLANDIA": "MCLD",
+        "MASSAPE DO PIAUI": "MSSP",
+        "MONSENHOR HIPOLITO": "MHP",
+        "OEIRAS": "OES",
+        "PADRE MARCOS": "PMY",
+        "PAQUETA": "PKUT",
+        "PATOS DO PIAUI": "PAOS",
+        "PICOS": "PCZ",
+        "PIO IX": "PIX",
+        "SANTA CRUZ DO PIAUI": "SZI",
+        "SANTA ROSA DO PIAUI": "SANS",
+        "SANTANA DO PIAUI": "STPI",
+        "SANTO ANTONIO DE LISBOA": "SSBS",
+        "SANTO INACIO DO PIAUI": "SYU",
+        "SAO JOAO DA CANABRAVA": "SCB",
+        "SAO JOAO DA VARJOTA": "SJVJ",
+        "SAO JOSE DO PIAUI": "SPY",
+        "SAO JULIAO": "SYJ",
+        "SAO LUIS DO PIAUI": "SLU",
+        "SIMOES": "SYS",
+        "SUSSUAPARA": "SSUP",
+        "TANQUE DO PIAUI": "TAQE",
+        "VERA MENDES": "VMDS",
+        "VILA NOVA DO PIAUI": "VLNK",
+        "WALL FERRAZ": "WLFZ",
+        "AROAZES": "ARZ",
+        "BARRA D'ALCANTARA": "BRNR",
+        "FRANCINOPOLIS": "FOO",
+        "INHUMA": "INU",
+        "LAGOA DO SITIO": "LGST",
+        "NOVO ORIENTE DO PIAUI": "NOPPI",
+        "PIMENTEIRAS": "PET",
+        "SANTA CRUZ DOS MILAGRES": "SCZM",
+        "VALENCA DO PIAUI": "VPI",
+        "VARZEA GRANDE": "VZD",
+        "ACAUA": "ACAH",
+        "BELA VISTA DO PIAUI": "BLVP",
+        "BETANIA DO PIAUI": "BTAA",
+        "CAMPINAS DO PIAUI": "CKU",
+        "CAMPO ALEGRE DO FIDALGO": "CPAF",
+        "CAPITAO GERVASIO OLIVEIRA": "CGVO",
+        "CONCEICAO DO CANINDE": "CYEI",
+        "ISAIAS COELHO": "ISL",
+        "JACOBINA DO PIAUI": "JCBA",
+        "JOAO COSTA": "JCOT",
+        "LAGOA DO BARRO DO PIAUI": "LGBR",
+        "NOVA SANTA RITA": "NSTR",
+        "PAES LANDIM": "PSK",
+        "PAULISTANA": "PUS",
+        "PEDRO LAURENTINO": "PDLT",
+        "QUEIMADA NOVA": "QANA",
+        "SAO FRANCISCO DE ASSIS DO PIAUI": "SFIS",
+        "SAO JOAO DO PIAUI": "SPI",
+        "SIMPLICIO MENDES": "SLCS",
+        "SOCORRO DO PIAUI": "SYCA",
+        "ARRAIAL": "ARK",
+        "CANAVIEIRA": "CNVI",
+        "FLORIANO": "FLO",
+        "FRANCISCO AYRES": "FYS",
+        "GUADALUPE": "GDP",
+        "ITAUEIRA": "IUY",
+        "JERUMENHA": "JNH",
+        "NAZARE DO PIAUI": "NZI",
+        "SAO FRANCISCO DO PIAUI": "SFU",
+        "SAO JOSE DO PEIXE": "SXE",
+        "SAO MIGUEL DO FIDALGO": "SMFD",
+        "BREJO DO PIAUI": "BJOY",
+        "CANTO DO BURITI": "CII",
+        "COLONIA DO GURGUEIA": "CAGL",
+        "ELISEU MARTINS": "ELS",
+        "FLORES DO PIAUI": "FUI",
+        "MANOEL EMIDIO": "MMI",
+        "PAJEU DO PIAUI": "PAJW",
+        "PAVUSSU": "PUN",
+        "RIBEIRA DO PIAUI": "RBAR",
+        "RIO GRANDE DO PIAUI": "RRPT",
+        "TAMBORIL DO PIAUI": "TBRI",
+        "ALVORADA DO GURGUEIA": "ALVG",
+        "BAIXA GRANDE DO RIBEIRO": "BXGY",
+        "BOM JESUS": "BOM",
+        "CRISTINO CASTRO": "CYTC",
+        "CURRAIS": "CURW",
+        "PALMEIRA DO PIAUI": "PMD",
+        "REDENCAO DO GURGUEIA": "RGG",
+        "RIBEIRO GONCALVES": "RBG",
+        "SANTA FILOMENA": "SFK",
+        "SANTA LUZ": "SXZ",
+        "AVELINO LOPES": "AVP",
+        "BARREIRAS DO PIAUI": "BSD",
+        "CORRENTE": "CNT",
+        "CRISTALANDIA DO PIAUI": "CWI",
+        "CURIMATA": "CYM",
+        "GILBUES": "GLU",
+        "JULIO BORGES": "JLB",
+        "MONTE ALEGRE DO PIAUI": "MOU",
+        "MORRO CABECA NO TEMPO": "MCBT",
+        "PARNAGUA": "PNWR",
+        "RIACHO FRIO": "RCFR",
+        "SAO GONCALO DO GURGUEIA": "SOGA",
+        "SEBASTIAO BARROS": "SBBR",
+        "ANTONIO ALMEIDA": "AMD",
+        "BERTOLINIA": "BTL",
+        "LANDRI SALES": "LDL",
+        "MARCOS PARENTE": "MPT",
+        "PORTO ALEGRE DO PIAUI": "PTAP",
+        "SEBASTIAO LEAL": "SBLL",
+        "URUCUI": "UUC",
+        "ANISIO DE ABREU": "ASB",
+        "BONFIM DO PIAUI": "BNFM",
+        "CARACOL": "CRW",
+        "CORONEL JOSE DIAS": "CNJD",
+        "DIRCEU ARCOVERDE": "DIU",
+        "DOM INOCENCIO": "DINF",
+        "FARTURA DO PIAUI": "FTUA",
+        "GUARIBAS": "GUB",
+        "JUREMA": "JWMA",
+        "SAO BRAZ DO PIAUI": "SOB",
+        "SAO LOURENCO DO PIAUI": "SLOP",
+        "SAO RAIMUNDO NONATO": "SRN",
+        "VARZEA BRANCA": "VBCA"
+      },
+      PR: {
+        "CASCAVEL":"CSC"
+      },
+      SE: {
+        "ARACAJU": "AJU",
+        "AREIA BRANCA": "AEB",
+        "BARRA DOS COQUEIROS": "BQS",
+        "CAPELA": "CPL",
+        "CARMOPOLIS": "CAI",
+        "DIVINA PASTORA": "DNP",
+        "GENERAL MAYNARD": "GYD",
+        "ITAPORANGA D'AJUDA": "IJD",
+        "JAPARATUBA": "JUB",
+        "LARANJEIRAS": "LNJ",
+        "MARUIM": "MRM",
+        "NOSSA SENHORA DAS DORES": "NSD",
+        "NOSSA SENHORA DO SOCORRO": "NRO",
+        "PIRAMBU": "PAB",
+        "RIACHUELO": "RCH",
+        "ROSARIO DO CATETE": "REE",
+        "SANTA ROSA DE LIMA": "SLM",
+        "SANTO AMARO DAS BROTAS": "SMB",
+        "SAO CRISTOVAO": "SCV",
+        "SIRIRI": "SYR",
+        "AMPARO DE SAO FRANCISCO": "APF",
+        "AQUIDABA": "AQB",
+        "BREJO GRANDE": "BEJ",
+        "CANHOBA": "CHB",
+        "CEDRO DE SAO JOAO": "CEJ",
+        "CUMBE": "CBE",
+        "ILHA DAS FLORES": "IHF",
+        "JAPOATA": "JPO",
+        "MALHADA DOS BOIS": "MLD",
+        "MURIBECA": "MUB",
+        "NEOPOLIS": "NOS",
+        "PACATUBA": "PKT",
+        "PROPRIA": "PPI",
+        "SANTANA DO SAO FRANCISCO": "SFW",
+        "SAO FRANCISCO": "SFY",
+        "TELHA": "TLH",
+        "CANINDE DE SAO FRANCISCO": "CFY",
+        "FEIRA NOVA": "FVA",
+        "GARARU": "GRX",
+        "GRACHO CARDOSO": "GCH",
+        "ITABI": "IBI",
+        "MONTE ALEGRE DE SERGIPE": "MSG",
+        "NOSSA SENHORA DA GLORIA": "NHG",
+        "NOSSA SENHORA DE LOURDES": "NNL",
+        "POCO REDONDO": "PDK",
+        "PORTO DA FOLHA": "PFH",
+        "CAMPO DO BRITO": "CDB",
+        "CARIRA": "CYR",
+        "FREI PAULO": "FIP",
+        "ITABAIANA": "INT",
+        "MACAMBIRA": "MMB",
+        "MALHADOR": "MHR",
+        "MOITA BONITA": "MOB",
+        "NOSSA SENHORA APARECIDA": "NRA",
+        "PEDRA MOLE": "PXM",
+        "PINHAO": "PYO",
+        "RIBEIROPOLIS": "RRO",
+        "SAO MIGUEL DO ALEIXO": "SXO",
+        "ARAUA": "AUX",
+        "CRISTINAPOLIS": "CSP",
+        "ESTANCIA": "ETC",
+        "INDIAROBA": "IND",
+        "ITABAIANINHA": "INN",
+        "PEDRINHAS": "PEH",
+        "POCO VERDE": "POV",
+        "SANTA LUZIA DO ITANHY": "SHY",
+        "TOBIAS BARRETO": "TBB",
+        "TOMAR DO GERU": "TGU",
+        "UMBAUBA": "UUB",
+        "BOQUIM": "BQM",
+        "LAGARTO": "LAT",
+        "RIACHAO DO DANTAS": "RHT",
+        "SALGADO": "SAX",
+        "SAO DOMINGOS": "SXN",
+        "SIMAO DIAS": "SDS"
+      }
+    };
+
+    const categorias = {
+      'GOVERNO': 'B2G',
+      'EMPRESA': 'B2B',
+      'PROVEDOR DE INTERNET': 'ISP',
+      'PROJETOS DA AGILITY': 'AGL',
+      'PROJETO FUST': 'FUST',
+      'TARE-AL': 'TARE-AL',
+      'TARE-PB': 'TARE-PB',
+      'EVENTO': 'EVENTO'
+    };
+
+    const servicos = {
+      'REDE METRO ETHERNET': 'MTR',
+      'REDE DWDM': 'DWDM',
+      'REDES RÁDIOS': 'WL-RÁDIO',
+      'INTERNET COM ONU (GPON)': 'GPON',
+      'INTERNET COM ONU (GPON) E CABO AS': 'GPONAS',
+      'WIFI DE ALTA PERFORMANCE': 'WIFI',
+      'SDWAN': 'SDWAN',
+      'LINK DEDICADO': 'LINK',
+      'VIDEO MONITORAMENTO': 'CFTV',
+      'SPEED': 'CFTV-SPD',
+      'OCR': 'CFTV-OCR',
+      'TELEFONIA': 'TEL'
+    };
+
+    const empresas = {
+      'Brisanet': 'BRIT',
+      'Agility': 'AGIL',
+      'Agility Propria': 'AGILP',
+    };
+
+    const estados = ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'];
+
+    // ===== SEARCHABLE SELECT COMPONENT =====
+    class SearchableSelect {
+      constructor(inputId, searchId, dropdownId, hiddenInputId, options) {
+        this.inputElement = document.getElementById(inputId);
+        this.searchElement = document.getElementById(searchId);
+        this.dropdownElement = document.getElementById(dropdownId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.options = options;
+        this.selectedValue = null;
+        this.selectedText = null;
+        this.init();
+      }
+
+      init() {
+        this.renderOptions(this.options);
+        this.inputElement.addEventListener('click', () => this.toggleDropdown());
+        this.searchElement.addEventListener('input', (e) => this.filterOptions(e.target.value));
+        document.addEventListener('click', (e) => this.handleClickOutside(e));
+      }
+
+      renderOptions(optionsToRender) {
+        this.dropdownElement.innerHTML = '';
+        
+        if (optionsToRender.length === 0) {
+          const noResults = document.createElement('div');
+          noResults.className = 'searchable-select-option no-results';
+          noResults.textContent = 'Nenhuma opção encontrada';
+          this.dropdownElement.appendChild(noResults);
+          return;
+        }
+
+        optionsToRender.forEach(option => {
+          const optionElement = document.createElement('div');
+          optionElement.className = 'searchable-select-option';
+          optionElement.textContent = option;
+          optionElement.addEventListener('click', () => this.selectOption(option));
+          this.dropdownElement.appendChild(optionElement);
+        });
+      }
+
+      toggleDropdown() {
+        const isActive = this.inputElement.classList.contains('active');
+        this.closeAllDropdowns();
+        
+        if (!isActive) {
+          this.inputElement.classList.add('active');
+          this.dropdownElement.classList.add('active');
+          this.searchElement.style.display = 'block';
+          this.searchElement.focus();
+          this.searchElement.value = '';
+          this.renderOptions(this.options);
+        }
+      }
+
+      closeAllDropdowns() {
+        document.querySelectorAll('.searchable-select-input').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelectorAll('.searchable-select-dropdown').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelectorAll('.search-input-field').forEach(el => {
+          el.style.display = 'none';
+        });
+      }
+
+      filterOptions(searchTerm) {
+        const filtered = this.options.filter(option =>
+          option.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        this.renderOptions(filtered);
+      }
+
+      selectOption(option) {
+        this.selectedValue = option;
+        this.selectedText = option;
+        this.hiddenInput.value = option;
+        
+        const textSpan = this.inputElement.querySelector('span');
+        textSpan.textContent = option;
+        
+        this.closeAllDropdowns();
+        this.triggerChange();
+      }
+
+      triggerChange() {
+        this.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      handleClickOutside(e) {
+        if (!e.target.closest('.searchable-select-wrapper')) {
+          this.closeAllDropdowns();
+        }
+      }
+    }
+
+    // Inicializar selects pesquisáveis
+    const categoriaSelect = new SearchableSelect(
+      'categoriaInput',
+      'categoriaSearch',
+      'categoriaDropdown',
+      'categoria',
+      Object.keys(categorias)
+    );
+
+    const servicoSelect = new SearchableSelect(
+      'servicoInput',
+      'servicoSearch',
+      'servicoDropdown',
+      'servico',
+      Object.keys(servicos)
+    );
+
+    const estadoSelect = new SearchableSelect(
+      'estadoInput',
+      'estadoSearch',
+      'estadoDropdown',
+      'estado',
+      estados
+    );
+
+    const empresaSelect = new SearchableSelect(
+      'empresaInput',
+      'empresaSearch',
+      'empresaDropdown',
+      'empresa',
+      Object.keys(empresas)
+    );
+
+    // Função para formatar o CNPJ
+    function formatarCNPJ(cnpj) {
+      return cnpj.replace(/\D/g, '');
+    }
+
+    // Aplicar máscara ao CNPJ
+    document.getElementById('cnpj').addEventListener('input', function() {
+      let value = this.value.replace(/\D/g, '');
+      if (value.length > 14) value = value.slice(0, 14);
+      
+      if (value.length > 12) {
+        this.value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+      } else if (value.length > 8) {
+        this.value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d*)$/, '$1.$2.$3/$4');
+      } else if (value.length > 5) {
+        this.value = value.replace(/^(\d{2})(\d{3})(\d*)$/, '$1.$2.$3');
+      } else if (value.length > 2) {
+        this.value = value.replace(/^(\d{2})(\d*)$/, '$1.$2');
+      } else {
+        this.value = value;
+      }
+    });
+
+    // ===== DYNAMIC CITY SEARCHABLE SELECT =====
+    class DynamicCitySearchableSelect {
+      constructor(containerId, hiddenInputId, cities) {
+        this.container = document.getElementById(containerId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.cities = cities; // Array de nomes de cidades
+        this.cityMap = {}; // Mapa de nome -> código
+        this.selectedValue = null;
+        this.selectedText = null;
+        this.init();
+      }
+
+      init() {
+        // Criar wrapper
+        this.wrapper = document.createElement('div');
+        this.wrapper.className = 'searchable-select-wrapper';
+
+        // Criar input display
+        this.inputElement = document.createElement('div');
+        this.inputElement.className = 'searchable-select-input';
+        this.inputElement.innerHTML = `
+          <span>Selecionar cidade</span>
+          <div class="dropdown-arrow"></div>
+        `;
+
+        // Criar input de busca
+        this.searchElement = document.createElement('input');
+        this.searchElement.type = 'text';
+        this.searchElement.className = 'search-input-field';
+        this.searchElement.placeholder = 'Digite para buscar...';
+        this.searchElement.style.display = 'none';
+
+        // Criar dropdown
+        this.dropdownElement = document.createElement('div');
+        this.dropdownElement.className = 'searchable-select-dropdown';
+
+        // Montar estrutura
+        this.wrapper.appendChild(this.inputElement);
+        this.wrapper.appendChild(this.searchElement);
+        this.wrapper.appendChild(this.dropdownElement);
+
+        // Limpar container e adicionar novo wrapper
+        this.container.innerHTML = '';
+        this.container.appendChild(this.wrapper);
+
+        // Event listeners
+        this.inputElement.addEventListener('click', () => this.toggleDropdown());
+        this.searchElement.addEventListener('input', (e) => this.filterOptions(e.target.value));
+        document.addEventListener('click', (e) => this.handleClickOutside(e));
+
+        // Renderizar opções iniciais
+        this.renderOptions(this.cities);
+      }
+
+      renderOptions(optionsToRender) {
+        this.dropdownElement.innerHTML = '';
+        
+        if (optionsToRender.length === 0) {
+          const noResults = document.createElement('div');
+          noResults.className = 'searchable-select-option no-results';
+          noResults.textContent = 'Nenhuma opção encontrada';
+          this.dropdownElement.appendChild(noResults);
+          return;
+        }
+
+        optionsToRender.forEach(cityName => {
+          const optionElement = document.createElement('div');
+          optionElement.className = 'searchable-select-option';
+          optionElement.textContent = cityName;
+          optionElement.addEventListener('click', () => this.selectOption(cityName));
+          this.dropdownElement.appendChild(optionElement);
+        });
+      }
+
+      toggleDropdown() {
+        const isActive = this.inputElement.classList.contains('active');
+        this.closeAllDropdowns();
+        
+        if (!isActive) {
+          this.inputElement.classList.add('active');
+          this.dropdownElement.classList.add('active');
+          this.searchElement.style.display = 'block';
+          this.searchElement.focus();
+          this.searchElement.value = '';
+          this.renderOptions(this.cities);
+        }
+      }
+
+      closeAllDropdowns() {
+        document.querySelectorAll('.searchable-select-input').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelectorAll('.searchable-select-dropdown').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelectorAll('.search-input-field').forEach(el => {
+          el.style.display = 'none';
+        });
+      }
+
+      filterOptions(searchTerm) {
+        const filtered = this.cities.filter(city =>
+          city.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        this.renderOptions(filtered);
+      }
+
+      selectOption(cityName) {
+        this.selectedValue = cityName;
+        this.selectedText = cityName;
+        
+        // Armazenar o código da cidade no hidden input
+        const cityCode = this.cityMap[cityName];
+        this.hiddenInput.value = cityCode;
+        
+        const textSpan = this.inputElement.querySelector('span');
+        textSpan.textContent = cityName;
+        
+        this.closeAllDropdowns();
+        this.triggerChange();
+      }
+
+      triggerChange() {
+        this.hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      handleClickOutside(e) {
+        if (!e.target.closest('.searchable-select-wrapper')) {
+          this.closeAllDropdowns();
+        }
+      }
+
+      // Método para definir o mapa de cidades
+      setCityMap(map) {
+        this.cityMap = map;
+      }
+    }
+
+    // Função para criar o seletor de cidades com base no estado
+    function createCitySelector(stateValue, containerId, hiddenInputId) {
+      if (stateValue && estadosCidades[stateValue]) {
+        const cidades = estadosCidades[stateValue];
+        const sortedCidades = Object.keys(cidades).sort((a, b) => a.localeCompare(b));
+        
+        // Criar nova instância de DynamicCitySearchableSelect
+        const citySelector = new DynamicCitySearchableSelect(containerId, hiddenInputId, sortedCidades);
+        
+        // Definir o mapa de nome -> código
+        citySelector.setCityMap(cidades);
+      }
+    }
+
+    // Atualizar campos de configuração dos projetos filhos
+    document.getElementById('quantidadeFilhos').addEventListener('change', function() {
+      updateChildProjectsConfig();
+    });
+
+    function updateChildProjectsConfig() {
+      const quantidade = parseInt(document.getElementById('quantidadeFilhos').value) || 1;
+      const container = document.getElementById('childProjectsConfig');
+      container.innerHTML = '';
+      
+      const estado = document.getElementById('estado').value;
+
+      for (let i = 0; i < quantidade; i++) {
+        const childDiv = document.createElement('div');
+        childDiv.innerHTML = `<h3>Projeto Filho ${i+1}</h3>`;
+        
+        const inputsDiv = document.createElement('div');
+        inputsDiv.className = 'child-inputs';
+        
+        const contratoInput = document.createElement('div');
+        contratoInput.className = 'form-group';
+        contratoInput.innerHTML = `
+          <label for="contratoFilho${i}">CONTRATO:</label>
+          <input type="text" id="contratoFilho${i}" placeholder="Contrato do Filho ${i+1}" required>
+        `;
+        
+        const pontoInput = document.createElement('div');
+        pontoInput.className = 'form-group';
+        pontoInput.innerHTML = `
+          <label for="pontoFilho${i}">PONTO:</label>
+          <input type="text" id="pontoFilho${i}" placeholder="Ponto do Filho ${i+1}" required>
+        `;
+        
+        const cidadeDiv = document.createElement('div');
+        cidadeDiv.className = 'form-group';
+        cidadeDiv.innerHTML = `<label for="cidadeFilho${i}">CIDADE:</label><div id="cidadeContainer${i}"></div>`;
+        
+        // Criar hidden input para armazenar o código da cidade
+        const hiddenCidadeInput = document.createElement('input');
+        hiddenCidadeInput.type = 'hidden';
+        hiddenCidadeInput.id = `cidadeFilho${i}`;
+        hiddenCidadeInput.required = true;
+        cidadeDiv.appendChild(hiddenCidadeInput);
+        
+        // Criar o seletor de cidades
+        createCitySelector(estado, `cidadeContainer${i}`, `cidadeFilho${i}`);
+        
+        inputsDiv.appendChild(contratoInput);
+        inputsDiv.appendChild(pontoInput);
+        inputsDiv.appendChild(cidadeDiv);
+        
+        childDiv.appendChild(inputsDiv);
+        container.appendChild(childDiv);
+      }
+    }
+
+    // Atualizar as cidades dos filhos quando o estado mudar
+    document.getElementById('estado').addEventListener('change', function() {
+      const estado = this.value;
+      const quantidade = parseInt(document.getElementById('quantidadeFilhos').value) || 1;
+      
+      for (let i = 0; i < quantidade; i++) {
+        const containerId = `cidadeContainer${i}`;
+        const hiddenInputId = `cidadeFilho${i}`;
+        createCitySelector(estado, containerId, hiddenInputId);
+      }
+    });
+
+    updateChildProjectsConfig();
+
+    // Evento de envio do formulário
+    document.getElementById("form").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const categoria = document.getElementById("categoria").value;
+      const servico = document.getElementById("servico").value;
+      const cnpj = document.getElementById("cnpj").value;
+      const estado = document.getElementById("estado").value;
+      const empresa = document.getElementById("empresa").value;
+      const quantidadeFilhos = parseInt(document.getElementById("quantidadeFilhos").value) || 1;
+
+      if (!categoria || !servico || !cnpj || !estado || !empresa) {
+        showNotification("Por favor, preencha todos os campos obrigatórios.", "error");
+        return;
+      }
+
+      let projetoPai = `${categorias[categoria]}-${servicos[servico]}-${formatarCNPJ(cnpj)}`;
+      if (categoria !== "TARE-AL" && categoria !== "TARE-PB") {
+        projetoPai += `-${estado}`;
+      }
+      projetoPai += `-${empresas[empresa]}`;
+
+      document.getElementById("projetoPai").textContent = projetoPai;
+
+      const childProjectsContainer = document.getElementById("childProjectsContainer");
+      childProjectsContainer.innerHTML = '';
+
+      const allProjects = [projetoPai];
+
+      for (let i = 0; i < quantidadeFilhos; i++) {
+        const contratoFilho = document.getElementById(`contratoFilho${i}`).value;
+        const pontoFilho = document.getElementById(`pontoFilho${i}`).value;
+        const cidadeFilho = document.getElementById(`cidadeFilho${i}`).value; // Já contém o código
+        
+        // Obter o nome da cidade do input display
+        const cidadeContainer = document.getElementById(`cidadeContainer${i}`);
+        const cidadeTexto = cidadeContainer.querySelector('.searchable-select-input span')?.textContent || '';
+
+        if (!contratoFilho || !pontoFilho || !cidadeFilho) {
+          showNotification(`Preencha todos os dados do Projeto Filho ${i+1}`, "error");
+          return;
+        }
+
+        const projetoFilho = `${categorias[categoria]}-${servicos[servico]}-${contratoFilho}-${pontoFilho}-${cidadeFilho}-${empresas[empresa]}`;
+        allProjects.push(projetoFilho);
+
+        const childDiv = document.createElement('div');
+        childDiv.className = 'child-project-item';
+        childDiv.innerHTML = `
+          <div class="project-label">PROJETO FILHO ${i+1} - ${cidadeTexto}:</div>
+          <div class="project-value" id="projetoFilho${i}">${projetoFilho}</div>
+          <button class="copy-btn" onclick="copyChildProject(${i})" title="Copiar Projeto Filho ${i+1}">
+            <svg fill="currentColor" viewBox="0 0 255.99316 255.99316" xmlns="http://www.w3.org/2000/svg">
+              <path d="M219.99268,39.99414v144.001a4,4,0,0,1-8,0V43.99414H71.98584a4,4,0,0,1,0-8H215.99268A4.0002,4.0002,0,0,1,219.99268,39.99414Zm-32,32.001v144a4.0002,4.0002,0,0,1-4,4H39.98584a4.0002,4.0002,0,0,1-4-4v-144a4.0002,4.0002,0,0,1,4-4H183.99268A4.0002,4.0002,0,0,1,187.99268,71.99512Zm-8,4H43.98584v136H179.99268Z"/>
+            </svg>
+          </button>
+        `;
+        childProjectsContainer.appendChild(childDiv);
+      }
+
+      window.allProjectsText = allProjects.join('\n');
+      document.getElementById("popup").style.display = "flex";
+    });
+
+    window.copyChildProject = function(index) {
+      const childProjectValue = document.getElementById(`projetoFilho${index}`).textContent;
+      navigator.clipboard.writeText(childProjectValue).then(() => {
+        showNotification(`Projeto Filho ${index+1} copiado com sucesso!`, "success");
+      }).catch(() => {
+        showNotification(`Erro ao copiar o Projeto Filho ${index+1}.`, "error");
+      });
+    };
+
+    document.getElementById("copyProjetoPai").addEventListener("click", function() {
+      const projetoPai = document.getElementById("projetoPai").textContent;
+      navigator.clipboard.writeText(projetoPai).then(() => {
+        showNotification("Projeto Pai copiado com sucesso!", "success");
+      }).catch(() => {
+        showNotification("Erro ao copiar o Projeto Pai.", "error");
+      });
+    });
+
+    document.getElementById("copyAllProjects").addEventListener("click", function() {
+      navigator.clipboard.writeText(window.allProjectsText).then(() => {
+        showNotification("Todos os projetos copiados com sucesso!", "success");
+      }).catch(() => {
+        showNotification("Erro ao copiar todos os projetos.", "error");
+      });
+    });
+
+    document.getElementById("closePopup").addEventListener("click", function() {
+      document.getElementById("popup").style.display = "none";
+    });
+
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Escape") {
+        document.getElementById("popup").style.display = "none";
+      }
+    });
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      if (currentTheme === 'dark') {
+        themeToggle.textContent = '☀️';
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      let theme = document.documentElement.getAttribute('data-theme');
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '☀️';
+      }
+      updateAccentColorRGB(); 
+    });
+    
+    function updateAccentColorRGB() {
+      const root = document.documentElement;
+      const accentColor = getComputedStyle(root).getPropertyValue('--accent-color').trim();
+      if (accentColor.startsWith('#')) {
+        const r = parseInt(accentColor.substring(1, 3), 16);
+        const g = parseInt(accentColor.substring(3, 5), 16);
+        const b = parseInt(accentColor.substring(5, 7), 16);
+        root.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+      }
+    }
+    
+    updateAccentColorRGB();
+  </script>
+</body>
+</html>
