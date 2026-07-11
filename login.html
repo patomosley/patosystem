@@ -154,9 +154,29 @@
       return next && next.startsWith("/") ? next : "/index.html";
     }
 
-    // se já estiver logado, manda direto pra dentro
+    // freio de emergência: evita loop infinito indo/voltando do login
+    const BOUNCE_KEY = "pato_bounce_count";
+    const BOUNCE_LIMIT = 2;
+    function bounceGuardTripped() {
+      const count = parseInt(sessionStorage.getItem(BOUNCE_KEY) || "0", 10) + 1;
+      sessionStorage.setItem(BOUNCE_KEY, String(count));
+      return count > BOUNCE_LIMIT;
+    }
+    function clearBounceGuard() {
+      sessionStorage.removeItem(BOUNCE_KEY);
+    }
+
+    // se já estiver logado, manda direto pra dentro (a não ser que já tenhamos
+    // tentado isso demais, sinal de que algo está inconsistente)
     client.auth.getSession().then(({ data: { session } }) => {
-      if (session) location.href = getNextUrl();
+      if (session) {
+        if (bounceGuardTripped()) {
+          errorMsg.textContent = "Sessão inconsistente detectada. Clique em Entrar novamente ou limpe os dados do site nas configurações do navegador.";
+          errorMsg.style.display = "block";
+          return;
+        }
+        location.href = getNextUrl();
+      }
     });
 
     form.addEventListener("submit", async (e) => {
@@ -178,6 +198,7 @@
         return;
       }
 
+      clearBounceGuard();
       location.href = getNextUrl();
     });
   </script>
